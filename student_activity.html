@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAN Deep Dive - Extension Activities</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 50px;
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 2.2em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #764ba2;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #764ba2;
+            font-size: 1.7em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: #667eea;
+            font-size: 1.3em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            background: #f0f4ff;
+            padding: 30px;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .activity-card {
+            background: #fff;
+            border: 2px solid #667eea;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 25px 0;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .difficulty {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .difficulty-beginner {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .difficulty-intermediate {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .difficulty-advanced {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .difficulty-expert {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .time-estimate {
+            display: inline-block;
+            background: #e8f4f8;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+            font-size: 0.9em;
+        }
+
+        .objectives {
+            background: #fff9e6;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #ffc107;
+            margin: 20px 0;
+        }
+
+        .objectives ul {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+
+        .objectives li {
+            margin: 8px 0;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .hint-box {
+            background: #e8f5e9;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .challenge-box {
+            background: #f8d7da;
+            border-left: 5px solid #dc3545;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .resources {
+            background: #d1ecf1;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #17a2b8;
+            margin: 20px 0;
+        }
+
+        .resources ul {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+
+        .math {
+            font-family: 'Courier New', monospace;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #c7254e;
+        }
+
+        .deliverable {
+            background: #f0f4ff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+        }
+
+        .deliverable h4 {
+            margin-top: 0;
+        }
+
+        .checklist {
+            margin: 15px 0;
+        }
+
+        .checklist li {
+            margin: 10px 0;
+            list-style-type: none;
+        }
+
+        .checklist li::before {
+            content: "☐ ";
+            font-size: 1.3em;
+            margin-right: 8px;
+            color: #667eea;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .nav-menu {
+            position: sticky;
+            top: 0;
+            background: #667eea;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            z-index: 1000;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            transition: background 0.3s;
+        }
+
+        .nav-menu a:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 30px 20px;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.7em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>GAN Deep Dive</h1>
+            <p>Extension Activities & Advanced Challenges</p>
+            <p style="margin-top: 15px; font-size: 1em; opacity: 0.9;">Explore, Experiment, and Master Generative Adversarial Networks</p>
+        </header>
+
+        <nav class="nav-menu">
+            <a href="#intro">Introduction</a>
+            <a href="#part1">Part 1: Analysis</a>
+            <a href="#part2">Part 2: Implementation</a>
+            <a href="#part3">Part 3: Research</a>
+            <a href="#part4">Part 4: Creative</a>
+            <a href="#resources">Resources</a>
+        </nav>
+
+        <div class="content">
+            <!-- Introduction -->
+            <section id="intro">
+                <div class="intro">
+                    <h3 style="margin-top: 0;">About This Activity</h3>
+                    <p><strong>Purpose:</strong> Deepen your understanding of GANs through hands-on experimentation, implementation, and analysis.</p>
+                    <p style="margin-top: 10px;"><strong>Format:</strong> Self-paced exploration with progressive challenges</p>
+                    <p style="margin-top: 10px;"><strong>Expected Time:</strong> 6-12 hours (spread over 1-2 weeks)</p>
+                    <p style="margin-top: 10px;"><strong>Grading:</strong> None - This is for learning and exploration!</p>
+                    <p style="margin-top: 15px;"><em>Choose activities that interest you. You don't need to complete everything - focus on areas you want to explore deeper.</em></p>
+                </div>
+
+                <h2>Learning Objectives</h2>
+                <ul style="margin-left: 40px;">
+                    <li>Understand GAN training dynamics through experimentation</li>
+                    <li>Analyze and interpret training behaviors and failure modes</li>
+                    <li>Implement architectural improvements and variations</li>
+                    <li>Develop intuition for hyperparameter tuning</li>
+                    <li>Explore cutting-edge GAN research and applications</li>
+                </ul>
+            </section>
+
+            <!-- Part 1: Experimental Analysis -->
+            <section id="part1">
+                <h2>Part 1: Experimental Analysis & Observation</h2>
+                <p>Systematically explore how GANs behave under different conditions.</p>
+
+                <!-- Activity 1.1 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-beginner">BEGINNER</span>
+                    <span class="time-estimate">⏱️ 1-2 hours</span>
+                    <h3>Activity 1.1: The Great Hyperparameter Hunt</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Understand how hyperparameters affect GAN training</li>
+                            <li>Develop intuition for parameter tuning</li>
+                            <li>Practice systematic experimentation</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Design and execute a systematic experiment to find optimal hyperparameters for MNIST generation.</p>
+
+                    <h4>Experimental Design:</h4>
+                    <p>Test the following configurations (5 epochs each):</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Experiment</th>
+                                <th>Learning Rate (G)</th>
+                                <th>Learning Rate (D)</th>
+                                <th>Batch Size</th>
+                                <th>Hypothesis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Baseline</td>
+                                <td>0.0002</td>
+                                <td>0.0002</td>
+                                <td>64</td>
+                                <td>Standard DCGAN settings</td>
+                            </tr>
+                            <tr>
+                                <td>High LR</td>
+                                <td>0.001</td>
+                                <td>0.001</td>
+                                <td>64</td>
+                                <td>Faster convergence or instability?</td>
+                            </tr>
+                            <tr>
+                                <td>Low LR</td>
+                                <td>0.00005</td>
+                                <td>0.00005</td>
+                                <td>64</td>
+                                <td>More stable but slower?</td>
+                            </tr>
+                            <tr>
+                                <td>D Advantage</td>
+                                <td>0.0001</td>
+                                <td>0.0004</td>
+                                <td>64</td>
+                                <td>Strong D helps G learn better?</td>
+                            </tr>
+                            <tr>
+                                <td>Large Batch</td>
+                                <td>0.0002</td>
+                                <td>0.0002</td>
+                                <td>128</td>
+                                <td>Better gradient estimates?</td>
+                            </tr>
+                            <tr>
+                                <td>Small Batch</td>
+                                <td>0.0002</td>
+                                <td>0.0002</td>
+                                <td>32</td>
+                                <td>More updates per epoch?</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>What to Document:</h4>
+                    <div class="checklist">
+                        <ul>
+                            <li>Final loss values (G and D)</li>
+                            <li>Final discriminator scores</li>
+                            <li>Training stability (oscillations? convergence?)</li>
+                            <li>Visual quality of generated images</li>
+                            <li>Time to complete 5 epochs</li>
+                            <li>Notable behaviors (mode collapse, divergence, etc.)</li>
+                        </ul>
+                    </div>
+
+                    <h4>Deliverables:</h4>
+                    <div class="deliverable">
+                        <ul>
+                            <li>Comparison table with all metrics</li>
+                            <li>Screenshots of loss curves for each experiment</li>
+                            <li>Grid of generated images from each configuration</li>
+                            <li>Analysis: Which configuration worked best and why?</li>
+                            <li>Recommendation: What hyperparameters would you use for production?</li>
+                        </ul>
+                    </div>
+
+                    <div class="hint-box">
+                        <strong>💡 Tip:</strong> Use fast mode for quick iterations. Take screenshots after each run. Pay attention to both quantitative metrics (losses) and qualitative aspects (image quality, diversity).
+                    </div>
+                </div>
+
+                <!-- Activity 1.2 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-intermediate">INTERMEDIATE</span>
+                    <span class="time-estimate">⏱️ 2-3 hours</span>
+                    <h3>Activity 1.2: Mode Collapse Detective</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Understand mode collapse phenomenon</li>
+                            <li>Learn to detect and diagnose training failures</li>
+                            <li>Explore solutions to common GAN problems</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Intentionally induce mode collapse, then identify it and propose solutions.</p>
+
+                    <h4>Part A: Induce Mode Collapse</h4>
+                    <p>Modify the training to favor mode collapse:</p>
+                    <ol style="margin-left: 40px;">
+                        <li>Train DCGAN on MNIST with very strong discriminator (LR_D = 0.001, LR_G = 0.00005)</li>
+                        <li>Use small batch size (16) to increase gradient noise</li>
+                        <li>Train for 20 epochs</li>
+                        <li>Generate 100 images periodically</li>
+                    </ol>
+
+                    <h4>Part B: Detection Criteria</h4>
+                    <p>Document evidence of mode collapse:</p>
+                    <div class="checklist">
+                        <ul>
+                            <li>Visual inspection: Do all generated images look similar?</li>
+                            <li>Diversity metric: Count unique digits in 100 generated samples</li>
+                            <li>Loss behavior: Is G loss stuck at a specific value?</li>
+                            <li>Score behavior: Is D(fake) not improving over epochs?</li>
+                        </ul>
+                    </div>
+
+                    <h4>Part C: Mathematical Analysis</h4>
+                    <p>Answer these questions based on your observations:</p>
+                    <ol style="margin-left: 40px;">
+                        <li>At what epoch did mode collapse occur?</li>
+                        <li>What was the relationship between L_G and L_D when collapse happened?</li>
+                        <li>Did the generator collapse to one specific digit or multiple?</li>
+                        <li>Calculate the entropy of digit distribution in your generated samples</li>
+                    </ol>
+
+                    <h4>Part D: Propose Solutions</h4>
+                    <p>Research and implement ONE of these solutions:</p>
+                    <ul style="margin-left: 40px;">
+                        <li><strong>Minibatch Discrimination:</strong> Modify D to consider batch statistics</li>
+                        <li><strong>Feature Matching:</strong> Match statistics of real and fake in intermediate layers</li>
+                        <li><strong>One-Sided Label Smoothing:</strong> Use 0.9 instead of 1.0 for real labels</li>
+                        <li><strong>Historical Averaging:</strong> Penalize deviation from historical parameters</li>
+                    </ul>
+
+                    <div class="hint-box">
+                        <strong>💡 Hint:</strong> Mode collapse often shows G loss stabilizing while D loss decreases. The generator "gives up" on diversity and focuses on a few samples that reliably fool D.
+                    </div>
+
+                    <div class="challenge-box">
+                        <strong>🔥 Advanced Challenge:</strong> Implement a diversity metric that automatically detects mode collapse during training and triggers a corrective action (e.g., inject noise, reset D partially, etc.).
+                    </div>
+                </div>
+
+                <!-- Activity 1.3 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-intermediate">INTERMEDIATE</span>
+                    <span class="time-estimate">⏱️ 1.5-2 hours</span>
+                    <h3>Activity 1.3: Loss Landscape Visualization</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Understand the non-convex optimization landscape of GANs</li>
+                            <li>Visualize how G and D interact during training</li>
+                            <li>Connect theory (minimax game) to practice (loss curves)</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Create visualizations that reveal the training dynamics beyond simple loss curves.</p>
+
+                    <h4>Required Visualizations:</h4>
+
+                    <ol style="margin-left: 40px;">
+                        <li><strong>Phase Plot:</strong> Plot D(real) vs D(fake) over time
+                            <ul>
+                                <li>X-axis: D(fake), Y-axis: D(real)</li>
+                                <li>Each epoch is a point, connected by lines</li>
+                                <li>Ideal trajectory: toward (0.5, 0.5)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Gradient Magnitude Plot:</strong> Track ∇L_G and ∇L_D over training
+                            <ul>
+                                <li>Modify trainer.py to capture gradient norms</li>
+                                <li>Plot both on same chart</li>
+                                <li>Identify vanishing/exploding gradients</li>
+                            </ul>
+                        </li>
+                        <li><strong>Distribution Distance:</strong> Plot JS divergence approximation
+                            <ul>
+                                <li>Use D's output to estimate divergence</li>
+                                <li>Should decrease over training</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h4>Implementation Steps:</h4>
+                    <div class="code-block">
+# Modify trainer.py:
+
+def train_step(self, real_images):
+    # ... existing code ...
+
+    # Before optimizer.step(), capture gradients:
+    g_grad_norm = 0
+    for p in self.netG.parameters():
+        if p.grad is not None:
+            g_grad_norm += p.grad.data.norm(2).item() ** 2
+    g_grad_norm = g_grad_norm ** 0.5
+
+    d_grad_norm = 0
+    for p in self.netD.parameters():
+        if p.grad is not None:
+            d_grad_norm += p.grad.data.norm(2).item() ** 2
+    d_grad_norm = d_grad_norm ** 0.5
+
+    # ... rest of code ...
+
+    return {
+        # ... existing returns ...
+        'g_grad_norm': g_grad_norm,
+        'd_grad_norm': d_grad_norm
+    }
+                    </div>
+
+                    <div class="hint-box">
+                        <strong>💡 Tip:</strong> Use matplotlib or add these plots to the React frontend. The phase plot is particularly revealing - stable training shows smooth movement toward equilibrium, while instability shows erratic jumps.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part 2: Implementation Challenges -->
+            <section id="part2">
+                <h2>Part 2: Implementation Challenges</h2>
+                <p>Extend the DCGAN implementation with new features and improvements.</p>
+
+                <!-- Activity 2.1 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-intermediate">INTERMEDIATE</span>
+                    <span class="time-estimate">⏱️ 3-4 hours</span>
+                    <h3>Activity 2.1: Conditional GAN Implementation</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Implement conditional generation (cGAN)</li>
+                            <li>Understand how conditioning information guides generation</li>
+                            <li>Practice modifying neural network architectures</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Modify the DCGAN to accept class labels, enabling you to generate specific digits on command (e.g., "generate a 7").</p>
+
+                    <h4>Implementation Requirements:</h4>
+
+                    <ol style="margin-left: 40px;">
+                        <li><strong>Modify Generator:</strong>
+                            <ul>
+                                <li>Accept two inputs: noise z and label y</li>
+                                <li>Embed label (one-hot encode to 10-dim vector)</li>
+                                <li>Concatenate with noise: [z, y] → 110-dim input</li>
+                                <li>Adjust first layer to accept 110 channels</li>
+                            </ul>
+                        </li>
+                        <li><strong>Modify Discriminator:</strong>
+                            <ul>
+                                <li>Accept image and label</li>
+                                <li>Create label embedding (10 → 64×64 map)</li>
+                                <li>Concatenate as 4th channel to image</li>
+                                <li>Adjust first layer to accept 4 channels</li>
+                            </ul>
+                        </li>
+                        <li><strong>Update Training Loop:</strong>
+                            <ul>
+                                <li>Sample random labels with each batch</li>
+                                <li>Pass labels to both G and D</li>
+                                <li>Ensure real/fake pairs have matching labels</li>
+                            </ul>
+                        </li>
+                        <li><strong>Add UI Controls:</strong>
+                            <ul>
+                                <li>Digit selector (0-9) for conditional generation</li>
+                                <li>Button: "Generate Specific Digit"</li>
+                                <li>Display results</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h4>Starter Code:</h4>
+                    <div class="code-block">
+# In models.py - Conditional Generator
+
+class ConditionalGenerator(nn.Module):
+    def __init__(self, nz=100, num_classes=10, ngf=64, nc=3):
+        super().__init__()
+        self.num_classes = num_classes
+
+        # Embedding for labels
+        self.label_emb = nn.Embedding(num_classes, num_classes)
+
+        self.main = nn.Sequential(
+            # First layer accepts nz + num_classes
+            nn.ConvTranspose2d(nz + num_classes, ngf * 8, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(ngf * 8),
+            nn.ReLU(True),
+            # ... rest of layers ...
+        )
+
+    def forward(self, noise, labels):
+        # Embed labels
+        label_embedding = self.label_emb(labels).unsqueeze(2).unsqueeze(3)
+        # Concatenate with noise
+        gen_input = torch.cat([noise, label_embedding], 1)
+        return self.main(gen_input)
+                    </div>
+
+                    <h4>Test Your Implementation:</h4>
+                    <div class="checklist">
+                        <ul>
+                            <li>Generate 10 images, one for each digit (0-9)</li>
+                            <li>Verify each generated image matches requested digit</li>
+                            <li>Calculate class accuracy: Does "3" actually look like 3?</li>
+                            <li>Test diversity: Generate 10 different "7"s - are they varied?</li>
+                        </ul>
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>⚠️ Common Pitfall:</strong> Make sure label embeddings are consistent between G and D. The same digit should have the same embedding in both networks. Consider sharing the embedding layer or using the same initialization.
+                    </div>
+                </div>
+
+                <!-- Activity 2.2 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-advanced">ADVANCED</span>
+                    <span class="time-estimate">⏱️ 4-6 hours</span>
+                    <h3>Activity 2.2: Wasserstein GAN Implementation</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Understand Wasserstein distance and its advantages</li>
+                            <li>Implement gradient penalty for 1-Lipschitz constraint</li>
+                            <li>Compare WGAN vs standard GAN training stability</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Implement WGAN-GP (Wasserstein GAN with Gradient Penalty) and compare it to standard DCGAN.</p>
+
+                    <h4>Theoretical Background:</h4>
+                    <p>WGAN replaces JS divergence with Wasserstein distance:</p>
+                    <div class="code-block">
+Standard GAN:  min_G max_D  𝔼[log D(x)] + 𝔼[log(1-D(G(z)))]
+
+Wasserstein GAN:  min_G max_f  𝔼[f(x)] - 𝔼[f(G(z))]
+
+where f is 1-Lipschitz critic (not discriminator)
+
+WGAN-GP adds gradient penalty:
+  L_D = 𝔼[D(G(z))] - 𝔼[D(x)] + λ·𝔼[(||∇D(x̂)||₂ - 1)²]
+
+where x̂ = εx + (1-ε)G(z), ε ~ U(0,1)
+                    </div>
+
+                    <h4>Implementation Steps:</h4>
+
+                    <ol style="margin-left: 40px;">
+                        <li><strong>Create WGAN Critic:</strong>
+                            <ul>
+                                <li>Remove sigmoid from discriminator (output can be any real number)</li>
+                                <li>Remove batch normalization (incompatible with gradient penalty)</li>
+                                <li>Use layer normalization instead</li>
+                            </ul>
+                        </li>
+                        <li><strong>Implement Gradient Penalty:</strong>
+                            <ul>
+                                <li>Create random interpolations between real and fake</li>
+                                <li>Compute critic gradient w.r.t. interpolations</li>
+                                <li>Penalize deviation from norm 1</li>
+                            </ul>
+                        </li>
+                        <li><strong>Modify Loss Functions:</strong>
+                            <ul>
+                                <li>Critic loss: Wasserstein distance + gradient penalty</li>
+                                <li>Generator loss: -𝔼[D(G(z))]</li>
+                                <li>No sigmoid, no log</li>
+                            </ul>
+                        </li>
+                        <li><strong>Adjust Training:</strong>
+                            <ul>
+                                <li>More critic updates per generator update (k=5)</li>
+                                <li>Use RMSprop or Adam optimizer</li>
+                                <li>Typically lower learning rates</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h4>Starter Code - Gradient Penalty:</h4>
+                    <div class="code-block">
+def compute_gradient_penalty(critic, real_images, fake_images, device):
+    """
+    Compute gradient penalty for WGAN-GP
+    """
+    batch_size = real_images.size(0)
+
+    # Random interpolation coefficient
+    epsilon = torch.rand(batch_size, 1, 1, 1, device=device)
+
+    # Interpolated images
+    interpolated = epsilon * real_images + (1 - epsilon) * fake_images
+    interpolated.requires_grad_(True)
+
+    # Critic output on interpolated images
+    critic_interpolated = critic(interpolated)
+
+    # Compute gradients
+    gradients = torch.autograd.grad(
+        outputs=critic_interpolated,
+        inputs=interpolated,
+        grad_outputs=torch.ones_like(critic_interpolated),
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True
+    )[0]
+
+    # Flatten gradients
+    gradients = gradients.view(batch_size, -1)
+
+    # Compute gradient norm
+    gradient_norm = gradients.norm(2, dim=1)
+
+    # Gradient penalty
+    gradient_penalty = ((gradient_norm - 1) ** 2).mean()
+
+    return gradient_penalty
+                    </div>
+
+                    <h4>Comparison Experiment:</h4>
+                    <p>Train both models (DCGAN and WGAN-GP) for 20 epochs each and compare:</p>
+                    <table>
+                        <tr>
+                            <th>Metric</th>
+                            <th>DCGAN</th>
+                            <th>WGAN-GP</th>
+                        </tr>
+                        <tr>
+                            <td>Training stability</td>
+                            <td>_____</td>
+                            <td>_____</td>
+                        </tr>
+                        <tr>
+                            <td>Final image quality</td>
+                            <td>_____</td>
+                            <td>_____</td>
+                        </tr>
+                        <tr>
+                            <td>Mode collapse incidents</td>
+                            <td>_____</td>
+                            <td>_____</td>
+                        </tr>
+                        <tr>
+                            <td>Training time per epoch</td>
+                            <td>_____</td>
+                            <td>_____</td>
+                        </tr>
+                        <tr>
+                            <td>Loss interpretability</td>
+                            <td>_____</td>
+                            <td>_____</td>
+                        </tr>
+                    </table>
+
+                    <div class="resources">
+                        <strong>📚 Resources:</strong>
+                        <ul>
+                            <li>Original WGAN paper: Arjovsky et al., 2017</li>
+                            <li>WGAN-GP paper: Gulrajani et al., 2017</li>
+                            <li>PyTorch WGAN-GP tutorial: github.com/EmilienDupont/wgan-gp</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Activity 2.3 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-advanced">ADVANCED</span>
+                    <span class="time-estimate">⏱️ 5-8 hours</span>
+                    <h3>Activity 2.3: Latent Space Explorer</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Understand the structure of latent space</li>
+                            <li>Implement latent space interpolation</li>
+                            <li>Visualize how generators map z to x</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Build an interactive tool to explore and visualize the GAN's latent space.</p>
+
+                    <h4>Features to Implement:</h4>
+
+                    <ol style="margin-left: 40px;">
+                        <li><strong>Linear Interpolation:</strong>
+                            <ul>
+                                <li>Select two random points z₁ and z₂ in latent space</li>
+                                <li>Generate intermediate points: z_t = (1-t)z₁ + t·z₂ for t ∈ [0,1]</li>
+                                <li>Generate images for each z_t</li>
+                                <li>Display as animation showing smooth transition</li>
+                            </ul>
+                        </li>
+                        <li><strong>Spherical Interpolation (SLERP):</strong>
+                            <ul>
+                                <li>Implement SLERP: z_t = sin((1-t)θ)/sin(θ)·z₁ + sin(t·θ)/sin(θ)·z₂</li>
+                                <li>Where θ = arccos(z₁·z₂ / ||z₁||·||z₂||)</li>
+                                <li>Compare to linear interpolation</li>
+                            </ul>
+                        </li>
+                        <li><strong>Latent Space Arithmetic:</strong>
+                            <ul>
+                                <li>Generate z for "7", "1", and "9"</li>
+                                <li>Compute: z_7 - z_1 + z_9</li>
+                                <li>Does the result look like a digit?</li>
+                                <li>Explore other arithmetic operations</li>
+                            </ul>
+                        </li>
+                        <li><strong>PCA Visualization:</strong>
+                            <ul>
+                                <li>Sample 1000 random z vectors</li>
+                                <li>Generate corresponding images</li>
+                                <li>Apply PCA to reduce z from 100D to 2D</li>
+                                <li>Plot 2D space with generated images at each point</li>
+                            </ul>
+                        </li>
+                        <li><strong>Attribute Vectors:</strong>
+                            <ul>
+                                <li>Find z vectors that generate specific attributes</li>
+                                <li>E.g., find "bold" vs "thin" digit direction</li>
+                                <li>Create sliders to control attributes</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h4>UI Requirements:</h4>
+                    <p>Add to the React frontend:</p>
+                    <ul style="margin-left: 40px;">
+                        <li>Panel: "Latent Space Explorer"</li>
+                        <li>Slider: Control interpolation parameter t ∈ [0,1]</li>
+                        <li>Display: Show interpolated images in real-time</li>
+                        <li>Buttons: "Random Walk", "Reset", "Save Favorite"</li>
+                    </ul>
+
+                    <div class="code-block">
+# Backend endpoint to add (main.py):
+
+@app.post("/interpolate")
+async def interpolate_latent(z1: List[float], z2: List[float], steps: int = 10):
+    """Generate interpolated images between two latent vectors"""
+    z1_tensor = torch.tensor([z1]).view(1, 100, 1, 1)
+    z2_tensor = torch.tensor([z2]).view(1, 100, 1, 1)
+
+    images = []
+    for t in np.linspace(0, 1, steps):
+        z_t = (1-t) * z1_tensor + t * z2_tensor
+        img = trainer.generate_images(1, noise=z_t)
+        img_b64 = trainer.images_to_base64(img)
+        images.append(img_b64)
+
+    return {"success": True, "images": images}
+                    </div>
+
+                    <div class="challenge-box">
+                        <strong>🔥 Advanced Challenge:</strong> Implement "GAN Inversion" - given a real image, find the z that generates it. This requires optimization in latent space. Can you recover the latent code for real MNIST digits?
+                    </div>
+                </div>
+
+                <!-- Activity 2.4 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-expert">EXPERT</span>
+                    <span class="time-estimate">⏱️ 8-12 hours</span>
+                    <h3>Activity 2.4: Mini StyleGAN</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Understand style-based generation</li>
+                            <li>Implement adaptive instance normalization (AdaIN)</li>
+                            <li>Create disentangled representations</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Implement a simplified version of StyleGAN for MNIST, incorporating:</p>
+
+                    <ol style="margin-left: 40px;">
+                        <li><strong>Mapping Network:</strong>
+                            <ul>
+                                <li>8-layer MLP: z ∈ ℝ¹⁰⁰ → w ∈ ℝ⁵¹²</li>
+                                <li>Use LeakyReLU activations</li>
+                                <li>Normalize w to unit sphere (optional)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Style-Based Generator:</strong>
+                            <ul>
+                                <li>Start with constant learned input (not noise)</li>
+                                <li>Apply AdaIN at each layer using w</li>
+                                <li>Inject noise for stochastic variation</li>
+                            </ul>
+                        </li>
+                        <li><strong>AdaIN Implementation:</strong>
+                            <div class="code-block">
+class AdaIN(nn.Module):
+    def forward(self, x, w):
+        # Learned affine transform
+        y_s, y_b = self.affine(w).chunk(2, dim=1)
+        y_s = y_s.view(-1, channels, 1, 1)
+        y_b = y_b.view(-1, channels, 1, 1)
+
+        # Normalize then modulate
+        x_normalized = (x - x.mean([2,3], keepdim=True)) / (x.std([2,3], keepdim=True) + 1e-8)
+        return y_s * x_normalized + y_b
+                            </div>
+                        </li>
+                        <li><strong>Style Mixing:</strong>
+                            <ul>
+                                <li>Use w₁ for coarse layers (low resolution)</li>
+                                <li>Use w₂ for fine layers (high resolution)</li>
+                                <li>Create hybrid images combining styles</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h4>Experiments to Run:</h4>
+                    <ol style="margin-left: 40px;">
+                        <li>Train StyleGAN-mini for 30 epochs</li>
+                        <li>Compare image quality to standard DCGAN</li>
+                        <li>Test style mixing: create hybrids of different digits</li>
+                        <li>Analyze w-space vs z-space (is w more disentangled?)</li>
+                        <li>Implement truncation trick and measure quality-diversity trade-off</li>
+                    </ol>
+
+                    <div class="resources">
+                        <strong>📚 Resources:</strong>
+                        <ul>
+                            <li>StyleGAN paper: Karras et al., "A Style-Based Generator Architecture for GANs" (2019)</li>
+                            <li>Official implementation: github.com/NVlabs/stylegan</li>
+                            <li>AdaIN explanation: Huang & Belongie, "Arbitrary Style Transfer in Real-time with Adaptive Instance Normalization" (2017)</li>
+                        </ul>
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>⚠️ Note:</strong> This is a substantial project! Start with a minimal version (mapping network + AdaIN at one layer) and gradually add features. Full StyleGAN is research-level complexity.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part 3: Research & Analysis -->
+            <section id="part3">
+                <h2>Part 3: Research & Analysis</h2>
+                <p>Investigate GAN theory and connect it to your observations.</p>
+
+                <!-- Activity 3.1 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-intermediate">INTERMEDIATE</span>
+                    <span class="time-estimate">⏱️ 2-3 hours</span>
+                    <h3>Activity 3.1: Evaluating GANs Properly</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Understand limitations of loss as a quality metric</li>
+                            <li>Implement Inception Score (IS)</li>
+                            <li>Implement Fréchet Inception Distance (FID)</li>
+                            <li>Learn proper GAN evaluation methodology</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Implement quantitative metrics to evaluate your GAN beyond just looking at images.</p>
+
+                    <h4>Part A: Inception Score</h4>
+                    <div class="code-block">
+IS(G) = exp(𝔼_x~p_g [KL(p(y|x) || p(y))])
+
+Steps:
+1. Generate 5000 images from your trained GAN
+2. Use pre-trained Inception-v3 to classify each image
+3. Compute p(y|x) for each image
+4. Compute marginal p(y) = 𝔼[p(y|x)]
+5. Calculate KL divergence
+6. Take exponential
+                    </div>
+
+                    <h4>Part B: Fréchet Inception Distance</h4>
+                    <div class="code-block">
+FID = ||μ_real - μ_fake||² + Tr(Σ_real + Σ_fake - 2√(Σ_real·Σ_fake))
+
+Steps:
+1. Extract features from Inception-v3 pool3 layer (2048-dim)
+2. Compute mean and covariance for real images
+3. Compute mean and covariance for generated images
+4. Calculate Fréchet distance
+                    </div>
+
+                    <h4>Implementation Requirements:</h4>
+                    <ol style="margin-left: 40px;">
+                        <li>Load pre-trained Inception-v3 from torchvision</li>
+                        <li>Generate 10,000 images from your GAN</li>
+                        <li>Extract features for both real and fake</li>
+                        <li>Compute IS and FID</li>
+                        <li>Track these metrics over training epochs</li>
+                        <li>Add to frontend dashboard</li>
+                    </ol>
+
+                    <h4>Analysis Questions:</h4>
+                    <ol style="margin-left: 40px;">
+                        <li>How does IS correlate with visual quality?</li>
+                        <li>At what epoch does FID stop improving?</li>
+                        <li>Do IS and FID always agree on quality?</li>
+                        <li>Can you have low FID but mode collapse? How?</li>
+                        <li>Compare MNIST vs Fashion-MNIST FID scores - which is harder?</li>
+                    </ol>
+
+                    <div class="hint-box">
+                        <strong>💡 Tip:</strong> Use <span class="math">torchvision.models.inception_v3(pretrained=True)</span> and extract features from the second-to-last layer. For MNIST, you may need to resize images to 299×299 for Inception.
+                    </div>
+                </div>
+
+                <!-- Activity 3.2 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-advanced">ADVANCED</span>
+                    <span class="time-estimate">⏱️ 3-4 hours</span>
+                    <h3>Activity 3.2: Nash Equilibrium Analysis</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Connect game theory to GAN training</li>
+                            <li>Analyze convergence properties</li>
+                            <li>Understand why GANs are hard to train</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Mathematically and empirically analyze whether your GAN reaches Nash equilibrium.</p>
+
+                    <h4>Theoretical Analysis:</h4>
+
+                    <p><strong>Nash Equilibrium Conditions:</strong></p>
+                    <div class="code-block">
+1. Optimal Discriminator (for fixed G):
+   D*(x) = p_data(x) / (p_data(x) + p_g(x))
+
+2. At Equilibrium:
+   p_g = p_data
+   D*(x) = 1/2 for all x
+   V(D*, G*) = -log(4)
+
+3. Both players satisfied:
+   G cannot improve given D*
+   D cannot improve given G*
+                    </div>
+
+                    <h4>Empirical Tests:</h4>
+
+                    <ol style="margin-left: 40px;">
+                        <li><strong>Test 1: Discriminator Optimality</strong>
+                            <ul>
+                                <li>After training, freeze G</li>
+                                <li>Train D for 50 more epochs</li>
+                                <li>Does D's performance improve significantly?</li>
+                                <li>If yes → G isn't at equilibrium</li>
+                            </ul>
+                        </li>
+                        <li><strong>Test 2: Generator Optimality</strong>
+                            <ul>
+                                <li>After training, freeze D</li>
+                                <li>Train G for 50 more epochs</li>
+                                <li>Does G's loss decrease significantly?</li>
+                                <li>If yes → equilibrium not reached</li>
+                            </ul>
+                        </li>
+                        <li><strong>Test 3: Distribution Matching</strong>
+                            <ul>
+                                <li>Generate 10,000 images</li>
+                                <li>Compare digit distribution to real MNIST</li>
+                                <li>Use chi-squared test for statistical difference</li>
+                                <li>p_g = p_data would mean equal distributions</li>
+                            </ul>
+                        </li>
+                        <li><strong>Test 4: Value Function</strong>
+                            <ul>
+                                <li>Compute V(D,G) over training</li>
+                                <li>Theoretical optimum: V = -log(4) ≈ -1.386</li>
+                                <li>How close does your GAN get?</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h4>Questions to Answer:</h4>
+                    <ol style="margin-left: 40px;">
+                        <li>Does your GAN reach Nash equilibrium? Provide evidence.</li>
+                        <li>If not, what prevents convergence?</li>
+                        <li>How does training duration affect proximity to equilibrium?</li>
+                        <li>Is equilibrium desirable, or is some imbalance beneficial?</li>
+                        <li>How does the learning rate ratio (α_D / α_G) affect equilibrium?</li>
+                    </ol>
+
+                    <div class="challenge-box">
+                        <strong>🔥 Expert Challenge:</strong> Prove or disprove: "My DCGAN implementation converges to a Nash equilibrium given infinite training time." Use both mathematical arguments and empirical evidence.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part 4: Creative Applications -->
+            <section id="part4">
+                <h2>Part 4: Creative Applications</h2>
+                <p>Apply your GAN knowledge to novel and interesting problems.</p>
+
+                <!-- Activity 4.1 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-intermediate">INTERMEDIATE</span>
+                    <span class="time-estimate">⏱️ 4-6 hours</span>
+                    <h3>Activity 4.1: Custom Dataset GAN</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Work with custom datasets</li>
+                            <li>Adapt GAN to different domains</li>
+                            <li>Handle real-world data challenges</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Train a GAN on your own custom dataset of images.</p>
+
+                    <h4>Dataset Ideas:</h4>
+                    <ul style="margin-left: 40px;">
+                        <li><strong>Your Artwork:</strong> Scan or photograph your drawings/paintings</li>
+                        <li><strong>Emojis:</strong> Download emoji dataset, generate new emojis</li>
+                        <li><strong>Sprites:</strong> Video game character sprites</li>
+                        <li><strong>Icons:</strong> UI icons, logos, symbols</li>
+                        <li><strong>Simple Shapes:</strong> Circles, squares, patterns</li>
+                        <li><strong>Pokemon:</strong> Use Pokemon sprite dataset</li>
+                    </ul>
+
+                    <h4>Implementation Steps:</h4>
+                    <ol style="margin-left: 40px;">
+                        <li>Collect at least 1000 images (more is better)</li>
+                        <li>Resize all images to 64×64</li>
+                        <li>Create custom PyTorch Dataset class</li>
+                        <li>Modify trainer to accept custom datasets</li>
+                        <li>Train for 50+ epochs</li>
+                        <li>Generate and evaluate results</li>
+                    </ol>
+
+                    <h4>Custom Dataset Template:</h4>
+                    <div class="code-block">
+from torch.utils.data import Dataset
+from PIL import Image
+import os
+
+class CustomImageDataset(Dataset):
+    def __init__(self, image_dir, transform=None):
+        self.image_dir = image_dir
+        self.image_files = [f for f in os.listdir(image_dir)
+                           if f.endswith(('.png', '.jpg', '.jpeg'))]
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.image_files)
+
+    def __getitem__(self, idx):
+        img_path = os.path.join(self.image_dir, self.image_files[idx])
+        image = Image.open(img_path).convert('RGB')
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image, 0  # Return dummy label
+                    </div>
+
+                    <h4>Challenges to Overcome:</h4>
+                    <ul style="margin-left: 40px;">
+                        <li>Limited data: How to prevent overfitting?</li>
+                        <li>Data augmentation: What augmentations help GAN training?</li>
+                        <li>Quality vs diversity: How to balance?</li>
+                        <li>Evaluation: How do you know if results are good?</li>
+                    </ul>
+
+                    <div class="hint-box">
+                        <strong>💡 Tip:</strong> Start with a simple, uniform dataset (e.g., all emojis are same size, similar style). Complex, varied datasets are much harder for GANs.
+                    </div>
+                </div>
+
+                <!-- Activity 4.2 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-advanced">ADVANCED</span>
+                    <span class="time-estimate">⏱️ 6-8 hours</span>
+                    <h3>Activity 4.2: Interactive GAN Art Studio</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Build user-friendly creative tools</li>
+                            <li>Combine multiple GAN techniques</li>
+                            <li>Create practical applications of generative models</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Create an interactive web application that uses GANs as a creative tool for artists.</p>
+
+                    <h4>Required Features:</h4>
+
+                    <ol style="margin-left: 40px;">
+                        <li><strong>Random Generation Mode:</strong>
+                            <ul>
+                                <li>Generate random images with one click</li>
+                                <li>"Regenerate" button for new samples</li>
+                                <li>"Keep" button to save favorites</li>
+                            </ul>
+                        </li>
+                        <li><strong>Controlled Generation Mode:</strong>
+                            <ul>
+                                <li>Sliders to control latent dimensions</li>
+                                <li>Real-time preview as sliders change</li>
+                                <li>Preset controls (if using cGAN)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Morphing/Interpolation:</strong>
+                            <ul>
+                                <li>Select two images</li>
+                                <li>Generate smooth transition animation</li>
+                                <li>Export as GIF or video</li>
+                            </ul>
+                        </li>
+                        <li><strong>Style Mixing (if using StyleGAN):</strong>
+                            <ul>
+                                <li>Select "structure" from image A</li>
+                                <li>Select "details" from image B</li>
+                                <li>Generate hybrid</li>
+                            </ul>
+                        </li>
+                        <li><strong>Gallery:</strong>
+                            <ul>
+                                <li>Save generated images</li>
+                                <li>Display in gallery grid</li>
+                                <li>Download individually or batch</li>
+                                <li>Share functionality</li>
+                            </ul>
+                        </li>
+                        <li><strong>Feedback Loop:</strong>
+                            <ul>
+                                <li>User rates generated images (1-5 stars)</li>
+                                <li>System learns which latent regions produce high-rated images</li>
+                                <li>Suggest new samples from high-quality regions</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h4>Technical Implementation:</h4>
+                    <ul style="margin-left: 40px;">
+                        <li>Add new endpoints to FastAPI backend</li>
+                        <li>Create new React components for each feature</li>
+                        <li>Implement local storage for saved images</li>
+                        <li>Add export functionality (PNG, SVG if vectorizing)</li>
+                        <li>Optimize for real-time generation (cache, pre-generate, etc.)</li>
+                    </ul>
+
+                    <div class="challenge-box">
+                        <strong>🔥 Creative Challenge:</strong> Host an "AI Art Exhibition" where you display 20-30 curated GAN-generated artworks. Write artist statements explaining how each piece was created and what makes it interesting.
+                    </div>
+                </div>
+
+                <!-- Activity 4.3 -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-expert">EXPERT</span>
+                    <span class="time-estimate">⏱️ 10-15 hours</span>
+                    <h3>Activity 4.3: Build a GAN from Scratch</h3>
+
+                    <div class="objectives">
+                        <strong>Learning Objectives:</strong>
+                        <ul>
+                            <li>Deeply understand every component of GAN training</li>
+                            <li>Implement backpropagation for adversarial training</li>
+                            <li>Debug complex training dynamics</li>
+                        </ul>
+                    </div>
+
+                    <h4>Challenge:</h4>
+                    <p>Implement a simple GAN from scratch using only NumPy (no PyTorch, no TensorFlow).</p>
+
+                    <h4>Constraints:</h4>
+                    <ul style="margin-left: 40px;">
+                        <li>Use ONLY NumPy for neural network operations</li>
+                        <li>Implement your own: forward pass, backward pass, optimizers</li>
+                        <li>Simple architecture: 2-3 layers for G and D</li>
+                        <li>Simple dataset: 2D Gaussian mixture or simple shapes</li>
+                    </ul>
+
+                    <h4>What to Implement:</h4>
+
+                    <ol style="margin-left: 40px;">
+                        <li><strong>Neural Network Primitives:</strong>
+                            <ul>
+                                <li>Linear layer (forward and backward)</li>
+                                <li>ReLU activation (forward and backward)</li>
+                                <li>Sigmoid activation (forward and backward)</li>
+                                <li>Binary cross-entropy loss (forward and backward)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Generator Network:</strong>
+                            <ul>
+                                <li>Input: 2D noise (z ~ N(0,I))</li>
+                                <li>Hidden: 64 neurons with ReLU</li>
+                                <li>Output: 2D coordinates (x, y)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Discriminator Network:</strong>
+                            <ul>
+                                <li>Input: 2D coordinates</li>
+                                <li>Hidden: 64 neurons with ReLU</li>
+                                <li>Output: Probability (Sigmoid)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Training Loop:</strong>
+                            <ul>
+                                <li>Alternating updates for D and G</li>
+                                <li>Batch processing</li>
+                                <li>Gradient computation and backprop</li>
+                                <li>SGD or Adam optimizer</li>
+                            </ul>
+                        </li>
+                        <li><strong>Visualization:</strong>
+                            <ul>
+                                <li>Plot real data distribution</li>
+                                <li>Plot generated data distribution</li>
+                                <li>Animate how distribution evolves</li>
+                                <li>Show decision boundary of D</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h4>Starter Template:</h4>
+                    <div class="code-block">
+import numpy as np
+import matplotlib.pyplot as plt
+
+class Layer:
+    def forward(self, x):
+        raise NotImplementedError
+
+    def backward(self, grad_output):
+        raise NotImplementedError
+
+class Linear(Layer):
+    def __init__(self, in_features, out_features):
+        self.W = np.random.randn(in_features, out_features) * 0.01
+        self.b = np.zeros((1, out_features))
+
+    def forward(self, x):
+        self.x = x
+        return x @ self.W + self.b
+
+    def backward(self, grad_output):
+        # Compute gradients w.r.t. inputs, weights, and biases
+        self.grad_W = self.x.T @ grad_output
+        self.grad_b = np.sum(grad_output, axis=0, keepdims=True)
+        grad_input = grad_output @ self.W.T
+        return grad_input
+
+# TODO: Implement ReLU, Sigmoid, BCELoss, Generator, Discriminator, training loop
+                    </div>
+
+                    <h4>Success Criteria:</h4>
+                    <div class="checklist">
+                        <ul>
+                            <li>GAN successfully generates 2D points matching target distribution</li>
+                            <li>Training converges (losses stabilize)</li>
+                            <li>Visualization shows generator learning over time</li>
+                            <li>Can generate simple shapes (circle, spiral, etc.)</li>
+                        </ul>
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>⚠️ Difficulty Warning:</strong> This is HARD! Implementing backpropagation manually is challenging. Start with very simple architecture. Debug with print statements. Expect bugs. This may take 2-3 days of focused work.
+                    </div>
+
+                    <div class="hint-box">
+                        <strong>💡 Tip:</strong> Start with a toy problem - generate 2D points forming a circle or line. Once that works, try more complex distributions (swiss roll, multiple Gaussians). Only attempt images after mastering 2D.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bonus Activities -->
+            <section id="bonus">
+                <h2>Bonus Explorations</h2>
+                <p>Short activities for curious minds.</p>
+
+                <!-- Quick Activities -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-beginner">BEGINNER</span>
+                    <span class="time-estimate">⏱️ 30 min each</span>
+                    <h3>Quick Explorations</h3>
+
+                    <h4>Exploration 1: Architecture Surgery</h4>
+                    <p>Modify the network architecture and observe effects:</p>
+                    <ul style="margin-left: 40px;">
+                        <li>Remove batch normalization - what happens?</li>
+                        <li>Change ReLU to LeakyReLU in generator - improvement?</li>
+                        <li>Add/remove one convolutional layer - how does depth affect quality?</li>
+                        <li>Double the number of filters (ngf=128) - better results?</li>
+                    </ul>
+
+                    <h4>Exploration 2: Latent Dimension Study</h4>
+                    <p>Test different latent vector sizes:</p>
+                    <ul style="margin-left: 40px;">
+                        <li>nz = 10 (very small)</li>
+                        <li>nz = 50 (small)</li>
+                        <li>nz = 100 (default)</li>
+                        <li>nz = 500 (large)</li>
+                    </ul>
+                    <p>How does latent dimensionality affect generation quality and diversity?</p>
+
+                    <h4>Exploration 3: Activation Function Zoo</h4>
+                    <p>Replace activations and compare:</p>
+                    <ul style="margin-left: 40px;">
+                        <li>Tanh vs Sigmoid in G output</li>
+                        <li>ELU vs ReLU in G</li>
+                        <li>SELU vs LeakyReLU in D</li>
+                        <li>Swish vs ReLU</li>
+                    </ul>
+
+                    <h4>Exploration 4: Loss Function Variations</h4>
+                    <p>Implement alternative loss functions:</p>
+                    <ul style="margin-left: 40px;">
+                        <li>Hinge loss</li>
+                        <li>Least squares (LSGAN)</li>
+                        <li>Relativistic GAN loss</li>
+                    </ul>
+                </div>
+
+                <!-- Research Activity -->
+                <div class="activity-card">
+                    <span class="difficulty difficulty-intermediate">INTERMEDIATE</span>
+                    <span class="time-estimate">⏱️ 2-3 hours</span>
+                    <h3>Research Deep Dive: GAN Variants</h3>
+
+                    <h4>Challenge:</h4>
+                    <p>Research one advanced GAN architecture and present your findings.</p>
+
+                    <h4>Choose One:</h4>
+                    <ul style="margin-left: 40px;">
+                        <li><strong>CycleGAN:</strong> Unpaired image-to-image translation</li>
+                        <li><strong>Pix2Pix:</strong> Paired image translation</li>
+                        <li><strong>ProGAN:</strong> Progressive growing for high resolution</li>
+                        <li><strong>BigGAN:</strong> Large-scale high-fidelity generation</li>
+                        <li><strong>StyleGAN2:</strong> Improved style-based generation</li>
+                        <li><strong>GauGAN:</strong> Semantic image synthesis</li>
+                    </ul>
+
+                    <h4>What to Research:</h4>
+                    <ol style="margin-left: 40px;">
+                        <li>What problem does this GAN variant solve?</li>
+                        <li>How does it differ from standard GAN architecturally?</li>
+                        <li>What are the key innovations?</li>
+                        <li>What are the mathematical formulations?</li>
+                        <li>What are real-world applications?</li>
+                        <li>What are limitations?</li>
+                    </ol>
+
+                    <h4>Deliverable:</h4>
+                    <p>Create a 5-slide presentation or blog post explaining the variant to a peer who knows basic GANs.</p>
+
+                    <div class="resources">
+                        <strong>📚 Starting Points:</strong>
+                        <ul>
+                            <li>Papers with Code: paperswithcode.com/methods/category/generative-adversarial-networks</li>
+                            <li>GAN Lab: poloclub.github.io/ganlab/</li>
+                            <li>Distill.pub GAN articles: distill.pub</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Final Project -->
+            <section id="final">
+                <h2>Capstone: Your Own GAN Project</h2>
+
+                <div class="activity-card">
+                    <span class="difficulty difficulty-expert">EXPERT</span>
+                    <span class="time-estimate">⏱️ 15-20 hours</span>
+                    <h3>Design and Build Your Own GAN Application</h3>
+
+                    <div class="intro" style="background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);">
+                        <p><strong>This is your chance to be creative!</strong></p>
+                        <p style="margin-top: 10px;">Choose a problem that interests you and build a complete GAN-based solution.</p>
+                    </div>
+
+                    <h4>Project Ideas:</h4>
+
+                    <div class="two-column" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                        <div>
+                            <h4>Creative Applications:</h4>
+                            <ul>
+                                <li>Logo generator for startups</li>
+                                <li>Procedural game asset generator</li>
+                                <li>Abstract art creator</li>
+                                <li>Pattern/texture generator</li>
+                                <li>Album cover designer</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4>Scientific Applications:</h4>
+                            <ul>
+                                <li>Synthetic medical image generator</li>
+                                <li>Data augmentation tool</li>
+                                <li>Anomaly detection system</li>
+                                <li>Molecule generator (if ambitious!)</li>
+                                <li>Climate data synthesizer</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h4>Requirements:</h4>
+                    <ol style="margin-left: 40px;">
+                        <li><strong>Novel Contribution:</strong> Not just running existing code
+                            <ul>
+                                <li>New dataset, OR</li>
+                                <li>New architecture modification, OR</li>
+                                <li>New application, OR</li>
+                                <li>Combination of multiple techniques</li>
+                            </ul>
+                        </li>
+                        <li><strong>Complete Implementation:</strong>
+                            <ul>
+                                <li>Training pipeline</li>
+                                <li>Evaluation metrics</li>
+                                <li>User interface (web, CLI, or notebook)</li>
+                                <li>Documentation</li>
+                            </ul>
+                        </li>
+                        <li><strong>Experimental Validation:</strong>
+                            <ul>
+                                <li>Baseline comparison</li>
+                                <li>Quantitative results</li>
+                                <li>Qualitative analysis</li>
+                            </ul>
+                        </li>
+                        <li><strong>Presentation:</strong>
+                            <ul>
+                                <li>Problem statement</li>
+                                <li>Approach and methodology</li>
+                                <li>Results and discussion</li>
+                                <li>Limitations and future work</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h4>Example: Pokemon Sprite Generator</h4>
+                    <p><strong>Problem:</strong> Game designers need diverse monster sprites</p>
+                    <p><strong>Approach:</strong></p>
+                    <ul style="margin-left: 40px;">
+                        <li>Collect 800 Pokemon sprites from generations 1-7</li>
+                        <li>Implement DCGAN with 32×32 resolution</li>
+                        <li>Add type conditioning (Water, Fire, Grass, etc.)</li>
+                        <li>Create UI to generate by type</li>
+                        <li>Implement "evolution" feature (morph one sprite to another)</li>
+                    </ul>
+                    <p><strong>Evaluation:</strong></p>
+                    <ul style="margin-left: 40px;">
+                        <li>FID score vs real Pokemon</li>
+                        <li>User study: Can people distinguish real from fake?</li>
+                        <li>Diversity: Count unique body shapes/colors</li>
+                        <li>Quality: Manual rating of best 50 generated sprites</li>
+                    </ul>
+
+                    <div class="deliverable">
+                        <h4>Final Deliverables:</h4>
+                        <ul>
+                            <li>Working code (GitHub repository)</li>
+                            <li>README with setup instructions</li>
+                            <li>Demo video (2-5 minutes)</li>
+                            <li>Technical report (5-10 pages)</li>
+                            <li>Presentation slides (optional)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Resources -->
+            <section id="resources">
+                <h2>Resources & References</h2>
+
+                <div class="resources">
+                    <h3>Essential Papers</h3>
+                    <ul>
+                        <li><strong>Original GAN:</strong> Goodfellow et al., "Generative Adversarial Networks" (2014)</li>
+                        <li><strong>DCGAN:</strong> Radford et al., "Unsupervised Representation Learning with DCGANs" (2015)</li>
+                        <li><strong>Improved Techniques:</strong> Salimans et al., "Improved Techniques for Training GANs" (2016)</li>
+                        <li><strong>WGAN:</strong> Arjovsky et al., "Wasserstein GAN" (2017)</li>
+                        <li><strong>WGAN-GP:</strong> Gulrajani et al., "Improved Training of WGANs" (2017)</li>
+                        <li><strong>Progressive GAN:</strong> Karras et al., "Progressive Growing of GANs" (2017)</li>
+                        <li><strong>StyleGAN:</strong> Karras et al., "A Style-Based Generator Architecture" (2018)</li>
+                    </ul>
+                </div>
+
+                <div class="resources">
+                    <h3>Tutorials & Guides</h3>
+                    <ul>
+                        <li>PyTorch DCGAN Tutorial: pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html</li>
+                        <li>GAN Lab (Interactive): poloclub.github.io/ganlab/</li>
+                        <li>Distill GAN Articles: distill.pub (search for GAN)</li>
+                        <li>Fast.ai GAN Course: course.fast.ai</li>
+                        <li>DeepLearning.AI GAN Specialization: Coursera</li>
+                    </ul>
+                </div>
+
+                <div class="resources">
+                    <h3>Code Repositories</h3>
+                    <ul>
+                        <li>PyTorch-GAN: github.com/eriklindernoren/PyTorch-GAN (100+ GAN implementations)</li>
+                        <li>StyleGAN2-PyTorch: github.com/rosinality/stylegan2-pytorch</li>
+                        <li>WGAN-GP: github.com/EmilienDupont/wgan-gp</li>
+                        <li>Awesome GAN: github.com/nightrome/really-awesome-gan</li>
+                    </ul>
+                </div>
+
+                <div class="resources">
+                    <h3>Datasets</h3>
+                    <ul>
+                        <li>MNIST: Included in torchvision</li>
+                        <li>Fashion-MNIST: Included in torchvision</li>
+                        <li>CelebA (faces): mmlab.ie.cuhk.edu.hk/projects/CelebA.html</li>
+                        <li>CIFAR-10: Included in torchvision</li>
+                        <li>Pokemon Sprites: veekun.com/dex/downloads</li>
+                        <li>Quick Draw: quickdraw.withgoogle.com/data</li>
+                        <li>Emoji Dataset: github.com/google/emoji-scavenger-hunt</li>
+                    </ul>
+                </div>
+
+                <div class="resources">
+                    <h3>Tools & Libraries</h3>
+                    <ul>
+                        <li>PyTorch: pytorch.org</li>
+                        <li>Torchvision: For datasets and pre-trained models</li>
+                        <li>Matplotlib: Visualization</li>
+                        <li>TensorBoard: Training visualization</li>
+                        <li>Weights & Biases: Experiment tracking (wandb.ai)</li>
+                        <li>FID-PyTorch: github.com/mseitzer/pytorch-fid</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Reflection -->
+            <section id="reflection">
+                <h2>Reflection & Discussion</h2>
+
+                <div class="activity-card">
+                    <h3>After Completing Activities</h3>
+
+                    <h4>Reflect on These Questions:</h4>
+                    <ol style="margin-left: 40px;">
+                        <li>What surprised you most about GAN training?</li>
+                        <li>What was the most challenging aspect of working with GANs?</li>
+                        <li>How do GANs compare to other generative models you know (VAEs, autoregressive models)?</li>
+                        <li>What applications of GANs excite you most?</li>
+                        <li>What ethical concerns do you have about GAN technology?</li>
+                        <li>If you were to continue GAN research, what would you investigate?</li>
+                    </ol>
+
+                    <h4>Share Your Experience:</h4>
+                    <ul style="margin-left: 40px;">
+                        <li>Document your most interesting finding</li>
+                        <li>Create a blog post or video tutorial</li>
+                        <li>Share generated images on social media (with #GAN #MachineLearning)</li>
+                        <li>Discuss with classmates - compare approaches and results</li>
+                        <li>Consider presenting at a student research symposium</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Tips -->
+            <section id="tips">
+                <h2>General Tips for Success</h2>
+
+                <div class="hint-box">
+                    <h4>🎯 Approach Strategy</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Start small:</strong> Get simple versions working before adding complexity</li>
+                        <li><strong>Document everything:</strong> Take screenshots, save logs, record observations</li>
+                        <li><strong>Version control:</strong> Use Git to track changes and experiments</li>
+                        <li><strong>Iterate quickly:</strong> Use fast mode for rapid experimentation</li>
+                        <li><strong>Read the code:</strong> Understanding implementation deepens theoretical knowledge</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4>⚠️ Common Mistakes to Avoid</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>Training for too few epochs (need 20+ for quality)</li>
+                        <li>Not normalizing data properly (range mismatch causes issues)</li>
+                        <li>Forgetting to freeze networks during alternating updates</li>
+                        <li>Comparing untrained models (always train baseline first)</li>
+                        <li>Ignoring warning signs (exploding losses, mode collapse)</li>
+                    </ul>
+                </div>
+
+                <div class="challenge-box">
+                    <h4>🔥 Challenge Yourself</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>Don't just copy code - understand every line</li>
+                        <li>When something works, ask why</li>
+                        <li>When something fails, debug systematically</li>
+                        <li>Compare your results to published benchmarks</li>
+                        <li>Push beyond the activities - create something unique</li>
+                    </ul>
+                </div>
+            </section>
+
+        </div>
+
+        <footer class="footer">
+            <h3>Remember: Learning is the Goal, Not Perfection</h3>
+            <p style="margin-top: 15px;">These activities are designed to challenge you and deepen your understanding.</p>
+            <p>Don't worry if you can't complete everything - focus on what interests you most.</p>
+            <p style="margin-top: 15px;">The journey of exploration is more valuable than reaching every destination.</p>
+            <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
+                GCU AIT-204 | Generative Adversarial Networks<br>
+                Happy Experimenting! 🚀
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

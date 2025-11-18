@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCGAN In-Class Project - Fashion Image Generation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 4px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .header .course-info {
+            color: #666;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .header .duration {
+            background: #f0f4ff;
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 15px;
+            color: #764ba2;
+            font-weight: bold;
+        }
+
+        section {
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #764ba2;
+            border-left: 5px solid #667eea;
+            padding-left: 15px;
+            margin-bottom: 15px;
+            margin-top: 25px;
+        }
+
+        h3 {
+            color: #667eea;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .objectives {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .objectives ul {
+            margin-left: 20px;
+        }
+
+        .objectives li {
+            margin-bottom: 8px;
+        }
+
+        .scenario {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #e74c3c;
+            margin: 20px 0;
+        }
+
+        .scenario h3 {
+            color: #c0392b;
+            margin-top: 0;
+        }
+
+        .deliverables {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .deliverables h3 {
+            color: #27ae60;
+            margin-top: 0;
+        }
+
+        .deliverables ol {
+            margin-left: 20px;
+        }
+
+        .deliverables li {
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .deliverables .sub-items {
+            margin-left: 20px;
+            margin-top: 8px;
+            font-weight: normal;
+            color: #555;
+        }
+
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .steps > li {
+            counter-increment: step-counter;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .steps > li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .tip-box {
+            background: #fff9e6;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .tip-box strong {
+            color: #e67e22;
+        }
+
+        .dataset-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .dataset-card {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+        }
+
+        .dataset-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .dataset-card ul {
+            margin-left: 20px;
+        }
+
+        .dataset-card li {
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+
+        .warning {
+            background: #ffebee;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .warning strong {
+            color: #c0392b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #667eea;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 In-Class Project: Fashion Image Generation with DCGAN</h1>
+            <p class="course-info">AIT-204 | Generative Adversarial Networks</p>
+            <p class="duration">⏱️ Duration: 2-3 hours</p>
+        </div>
+
+        <section class="objectives">
+            <h2>🎯 Learning Objectives</h2>
+            <ul>
+                <li>Understand and implement Deep Convolutional GANs (DCGAN) using PyTorch</li>
+                <li>Build an interactive React application for real-time GAN training visualization</li>
+                <li>Apply transfer learning concepts by adapting MNIST-trained architecture to Fashion-MNIST</li>
+                <li>Compare training dynamics across different datasets</li>
+                <li>Implement model persistence and checkpoint management</li>
+                <li>Optimize performance using GPU acceleration (Apple Silicon MPS)</li>
+            </ul>
+        </section>
+
+        <div class="scenario">
+            <h3>📋 Project Scenario</h3>
+            <p>
+                You work for a fashion tech startup developing an AI-powered design assistant. The marketing team needs
+                a demo showing how GANs can generate fashion item designs. You've been given a working DCGAN implementation
+                that generates handwritten digits (MNIST), and your task is to adapt it to generate fashion items
+                (Fashion-MNIST) and create a comparative analysis tool.
+            </p>
+        </div>
+
+        <section>
+            <h2>📚 Background</h2>
+            <p>
+                The provided codebase includes a fully functional DCGAN implementation with:
+            </p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li><strong>Backend (FastAPI + PyTorch):</strong> DCGAN models, training loop, REST API, WebSocket support</li>
+                <li><strong>Frontend (React + Vite):</strong> Interactive dashboard, real-time visualization, device selection</li>
+                <li><strong>Features:</strong> GPU/CPU switching, model save/load, live metrics, training logs</li>
+            </ul>
+
+            <div class="dataset-comparison">
+                <div class="dataset-card">
+                    <h4>MNIST Dataset (Baseline)</h4>
+                    <ul>
+                        <li>Handwritten digits (0-9)</li>
+                        <li>28×28 grayscale images</li>
+                        <li>60,000 training samples</li>
+                        <li>Simple patterns, high contrast</li>
+                        <li>Fast convergence (~5-10 epochs)</li>
+                    </ul>
+                </div>
+                <div class="dataset-card">
+                    <h4>Fashion-MNIST (Your Task)</h4>
+                    <ul>
+                        <li>Clothing items (10 categories)</li>
+                        <li>28×28 grayscale images</li>
+                        <li>60,000 training samples</li>
+                        <li>Complex textures, varied shapes</li>
+                        <li>Slower convergence (~15-25 epochs)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <p style="margin-top: 15px;">
+                <strong>Fashion-MNIST Classes:</strong> T-shirt/top, Trouser, Pullover, Dress, Coat, Sandal, Shirt, Sneaker, Bag, Ankle boot
+            </p>
+        </section>
+
+        <section>
+            <h2>🔧 Your Tasks</h2>
+
+            <ol class="steps">
+                <li>
+                    <strong>Setup & Familiarization (15 minutes)</strong>
+                    <div class="code-block">
+# Clone or navigate to the project
+cd dcgan-demo
+
+# Start backend
+./start_backend.sh
+
+# In another terminal, start frontend
+./start_frontend.sh
+
+# Open browser: http://localhost:5173
+                    </div>
+                    <div class="tip-box">
+                        <strong>💡 Tip:</strong> First, run a quick training session with MNIST (5 epochs) to understand
+                        the baseline behavior. Use GPU (MPS) for faster results!
+                    </div>
+                </li>
+
+                <li>
+                    <strong>Train Fashion-MNIST Model (30-45 minutes)</strong>
+                    <ul style="margin-top: 10px; margin-left: 20px;">
+                        <li>Select "Fashion MNIST" from the dataset dropdown</li>
+                        <li>Choose GPU (Apple Silicon MPS) for faster training</li>
+                        <li>Start with 15 epochs, batch size 64</li>
+                        <li>Monitor the training metrics and observe differences from MNIST</li>
+                        <li>Save your trained model using the "Save Model" button</li>
+                    </ul>
+                    <div class="tip-box">
+                        <strong>⚠️ Critical Thinking:</strong> Fashion-MNIST is harder to train than MNIST.
+                        Why? Consider texture complexity, shape variation, and class diversity. Document your observations!
+                    </div>
+                </li>
+
+                <li>
+                    <strong>Implement Comparison Dashboard (45-60 minutes)</strong>
+                    <p style="margin-bottom: 10px;">Add a new section to the React UI that compares MNIST vs Fashion-MNIST results:</p>
+
+                    <h4 style="margin-top: 15px; color: #667eea;">Required Features:</h4>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li><strong>Side-by-side image display:</strong> Show generated images from both datasets</li>
+                        <li><strong>Training metrics comparison:</strong> Compare loss curves and discriminator scores</li>
+                        <li><strong>Performance metrics:</strong> Display training time, epochs to convergence, final loss values</li>
+                        <li><strong>Model switching:</strong> Add buttons to switch between MNIST and Fashion-MNIST models</li>
+                    </ul>
+
+                    <div class="tip-box">
+                        <strong>💡 Implementation Hint:</strong> You'll need to:
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li>Update the backend to support multiple saved models (e.g., <code>mnist_checkpoint.pth</code>, <code>fashion_checkpoint.pth</code>)</li>
+                            <li>Add new state variables in React to track which dataset is active</li>
+                            <li>Create a new panel component for comparison visualization</li>
+                            <li>Modify the save/load endpoints to accept model names</li>
+                        </ul>
+                    </div>
+                </li>
+
+                <li>
+                    <strong>Experiment & Optimize (15-30 minutes)</strong>
+                    <p style="margin-bottom: 10px;">Try at least ONE of these experiments:</p>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Hyperparameter tuning:</strong> Try different learning rates (0.0001, 0.0003) or batch sizes (32, 128)</li>
+                        <li><strong>Extended training:</strong> Train for 30-50 epochs and observe quality improvements</li>
+                        <li><strong>Architecture modification:</strong> Adjust network depth or feature map sizes</li>
+                        <li><strong>Performance comparison:</strong> Compare CPU vs GPU training times quantitatively</li>
+                    </ul>
+                    <div class="warning">
+                        <strong>⚠️ Time Management:</strong> If you're short on time, focus on completing the comparison
+                        dashboard. Experiments can use pre-trained models or shorter training runs (5 epochs).
+                    </div>
+                </li>
+
+                <li>
+                    <strong>Documentation & Analysis (15-20 minutes)</strong>
+                    <p style="margin-bottom: 10px;">Create a brief analysis document (Markdown or text file) covering:</p>
+                    <ul style="margin-left: 20px;">
+                        <li>Key differences observed between MNIST and Fashion-MNIST training</li>
+                        <li>Quantitative comparison (epochs needed, final losses, training time)</li>
+                        <li>Quality assessment of generated images</li>
+                        <li>Challenges faced and solutions implemented</li>
+                        <li>Screenshot of your comparison dashboard</li>
+                    </ul>
+                </li>
+            </ol>
+        </section>
+
+        <div class="deliverables">
+            <h3>✅ Deliverables</h3>
+            <ol>
+                <li>
+                    <strong>Working Application</strong>
+                    <div class="sub-items">
+                        • React app running with comparison dashboard<br>
+                        • Both MNIST and Fashion-MNIST models trained and saved<br>
+                        • All existing features functional (GPU/CPU switching, save/load, generation)
+                    </div>
+                </li>
+
+                <li>
+                    <strong>Code Modifications</strong>
+                    <div class="sub-items">
+                        • Updated backend endpoints to support multiple model checkpoints<br>
+                        • New React component(s) for comparison visualization<br>
+                        • Modified UI to show side-by-side comparisons<br>
+                        • Clean, commented code following existing patterns
+                    </div>
+                </li>
+
+                <li>
+                    <strong>Trained Models</strong>
+                    <div class="sub-items">
+                        • MNIST model checkpoint (can use existing or retrain)<br>
+                        • Fashion-MNIST model checkpoint (minimum 15 epochs)<br>
+                        • Both models should be loadable and generate reasonable images
+                    </div>
+                </li>
+
+                <li>
+                    <strong>Analysis Document</strong>
+                    <div class="sub-items">
+                        • Written analysis (1-2 pages) comparing the two datasets<br>
+                        • Quantitative metrics table (losses, training time, etc.)<br>
+                        • Screenshots showing: comparison dashboard, generated images, training curves<br>
+                        • Reflection on challenges and learning points
+                    </div>
+                </li>
+
+                <li>
+                    <strong>Demonstration</strong>
+                    <div class="sub-items">
+                        • Be ready to demo your working application<br>
+                        • Show model switching and comparison features<br>
+                        • Explain your implementation decisions<br>
+                        • Generate images from both models live
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <section>
+            <h2>📊 Suggested Comparison Metrics</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>MNIST</th>
+                        <th>Fashion-MNIST</th>
+                        <th>Your Observations</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Training Time (10 epochs, GPU)</td>
+                        <td>~10-15 min</td>
+                        <td>~15-25 min</td>
+                        <td>[Record actual time]</td>
+                    </tr>
+                    <tr>
+                        <td>Final Generator Loss</td>
+                        <td>[Record]</td>
+                        <td>[Record]</td>
+                        <td>[Compare]</td>
+                    </tr>
+                    <tr>
+                        <td>Final Discriminator Loss</td>
+                        <td>[Record]</td>
+                        <td>[Record]</td>
+                        <td>[Compare]</td>
+                    </tr>
+                    <tr>
+                        <td>D(real) Score</td>
+                        <td>[Record]</td>
+                        <td>[Record]</td>
+                        <td>[Compare]</td>
+                    </tr>
+                    <tr>
+                        <td>D(fake) Score</td>
+                        <td>[Record]</td>
+                        <td>[Record]</td>
+                        <td>[Compare]</td>
+                    </tr>
+                    <tr>
+                        <td>Image Quality (1-10)</td>
+                        <td>[Rate]</td>
+                        <td>[Rate]</td>
+                        <td>[Explain rating]</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>💡 Critical Thinking Questions</h2>
+            <p>Consider these questions as you work (include answers in your analysis):</p>
+            <ol style="margin-left: 20px; margin-top: 10px;">
+                <li>Why does Fashion-MNIST typically require more epochs than MNIST to achieve similar quality?</li>
+                <li>What patterns do you notice in the loss curves? Are they different between datasets?</li>
+                <li>How does the discriminator's performance differ between simple (digits) and complex (clothing) images?</li>
+                <li>What role does GPU acceleration play? Calculate the actual speedup factor you observed.</li>
+                <li>If you were to improve the Fashion-MNIST results, what would you try first and why?</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>🆘 Troubleshooting Tips</h2>
+            <div class="tip-box">
+                <strong>Backend Port Issues:</strong> If port 8000 is in use, run <code>lsof -ti:8000 | xargs kill -9</code>
+            </div>
+            <div class="tip-box">
+                <strong>Training Too Slow:</strong> Make sure GPU (MPS) is selected, not CPU. Check device indicator shows "⚡ GPU (MPS)"
+            </div>
+            <div class="tip-box">
+                <strong>WebSocket Disconnects:</strong> This is normal during very fast GPU training. Refresh the browser if needed.
+            </div>
+            <div class="tip-box">
+                <strong>Poor Image Quality:</strong> Fashion-MNIST needs more epochs. Try 20-30 epochs for better results.
+            </div>
+            <div class="tip-box">
+                <strong>React Component Issues:</strong> Follow existing component patterns in App.jsx. Use same styling classes.
+            </div>
+        </section>
+
+        <section>
+            <h2>🎯 Grading (For Reference Only)</h2>
+            <p><em>This is an in-class project with no formal grade. However, successful completion demonstrates:</em></p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>✅ Understanding of GAN architecture and training dynamics</li>
+                <li>✅ Ability to work with existing codebases and extend functionality</li>
+                <li>✅ React component development and state management skills</li>
+                <li>✅ Critical thinking about model performance and dataset complexity</li>
+                <li>✅ Practical ML engineering (GPU optimization, model persistence)</li>
+            </ul>
+        </section>
+
+        <div class="warning">
+            <strong>⏰ Time Check:</strong> By the end of hour 2, you should have:
+            <ul style="margin-left: 20px; margin-top: 8px;">
+                <li>✓ Fashion-MNIST model trained and saved</li>
+                <li>✓ Basic comparison dashboard implemented</li>
+                <li>✓ Started documenting observations</li>
+            </ul>
+            If behind schedule, prioritize deliverables #1-3 and keep experiments simple.
+        </div>
+
+        <section>
+            <h2>🚀 Extension Ideas (Optional)</h2>
+            <p>If you finish early or want to continue after class:</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>Add class-conditional generation (generate specific clothing types on demand)</li>
+                <li>Implement interpolation visualization (morph between two generated images)</li>
+                <li>Create an export feature to save generated images as PNG files</li>
+                <li>Add a "training history" panel showing all past training sessions</li>
+                <li>Implement model comparison with different architectures (deeper networks, etc.)</li>
+                <li>Add data augmentation and compare results</li>
+            </ul>
+        </section>
+
+        <div class="footer">
+            <p><strong>Good luck and have fun exploring Generative Adversarial Networks! 🎨</strong></p>
+            <p style="margin-top: 10px;">Questions? Ask your instructor or check the README.md for detailed documentation.</p>
+            <p style="margin-top: 15px; color: #999;">AIT-204: Advanced Topics in Artificial Intelligence | Grand Canyon University</p>
+        </div>
+    </div>
+</body>
+</html>

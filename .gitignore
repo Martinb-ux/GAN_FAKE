@@ -1,0 +1,155 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv
+
+# PyTorch
+*.pth
+*.pt
+*.ckpt
+checkpoint*.pth
+data/
+datasets/
+MNIST/
+FashionMNIST/
+runs/
+*.npy
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+build/
+.cache/
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.history/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+.nyc_output
+.pytest_cache/
+*.cover
+.coverage
+.coverage.*
+htmlcov/
+
+# Temporary Files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Generated Documentation
+docs/_build/
+site/
+
+# Model Outputs
+generated_images/
+samples/
+outputs/
+checkpoints/
+saved_models/
+
+# Student Submissions (if using for grading)
+submissions/
+student_work/
+
+# Large Media Files (add specific extensions if needed)
+*.mp4
+*.avi
+*.mov
+*.gif
+*.zip
+*.tar.gz
+*.rar
+
+# Experiment Results
+experiments/
+results/
+wandb/
+tensorboard_logs/
+
+# macOS
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.nfs*

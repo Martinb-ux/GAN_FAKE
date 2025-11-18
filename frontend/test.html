@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCGAN Backend Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        img { max-width: 100%; border-radius: 5px; margin-top: 10px; }
+        .log { font-family: monospace; font-size: 12px; padding: 5px; border-left: 3px solid #667eea; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>🧪 DCGAN Backend Test Page</h1>
+    <p>Use this page to test if the backend is working correctly</p>
+
+    <!-- Test 1: Server Status -->
+    <div class="test-section">
+        <h2>Test 1: Check Server Status</h2>
+        <button onclick="testStatus()">Test GET /status</button>
+        <div id="status-result" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- Test 2: Generate Images -->
+    <div class="test-section">
+        <h2>Test 2: Generate Images</h2>
+        <button onclick="testGenerate(4)">Generate 4 Images</button>
+        <button onclick="testGenerate(16)">Generate 16 Images</button>
+        <div id="generate-result" class="result" style="display:none;"></div>
+        <div id="generate-image"></div>
+    </div>
+
+    <!-- Test 3: WebSocket Connection -->
+    <div class="test-section">
+        <h2>Test 3: WebSocket Connection</h2>
+        <button onclick="testWebSocket()">Connect WebSocket</button>
+        <button onclick="closeWebSocket()">Disconnect</button>
+        <div id="ws-status" class="result" style="display:none;"></div>
+        <div id="ws-messages" style="max-height: 200px; overflow-y: auto;"></div>
+    </div>
+
+    <!-- Test 4: Start Quick Training -->
+    <div class="test-section">
+        <h2>Test 4: Start Training (2 epochs)</h2>
+        <button onclick="testTraining()">Start 2-Epoch Training</button>
+        <button onclick="stopTraining()">Stop Training</button>
+        <div id="training-result" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let ws = null;
+
+        function showResult(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = 'result ' + (isError ? 'error' : 'success');
+            el.style.display = 'block';
+        }
+
+        async function testStatus() {
+            try {
+                console.log('Testing /status endpoint...');
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+                showResult('status-result', JSON.stringify(data, null, 2), false);
+                console.log('Status response:', data);
+            } catch (error) {
+                showResult('status-result', `Error: ${error.message}`, true);
+                console.error('Status error:', error);
+            }
+        }
+
+        async function testGenerate(numImages) {
+            try {
+                console.log(`Testing /generate with ${numImages} images...`);
+                showResult('generate-result', '⏳ Generating images...', false);
+
+                const response = await fetch(`${API_BASE}/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ num_images: numImages })
+                });
+
+                const data = await response.json();
+                console.log('Generate response:', data);
+
+                if (data.success) {
+                    showResult('generate-result', `✓ Generated ${data.num_images} images`, false);
+
+                    // Display image
+                    const imgContainer = document.getElementById('generate-image');
+                    imgContainer.innerHTML = `<img src="data:image/png;base64,${data.image}" alt="Generated">`;
+                } else {
+                    showResult('generate-result', `Error: ${JSON.stringify(data)}`, true);
+                }
+            } catch (error) {
+                showResult('generate-result', `Error: ${error.message}`, true);
+                console.error('Generate error:', error);
+            }
+        }
+
+        function testWebSocket() {
+            try {
+                console.log('Connecting to WebSocket...');
+                ws = new WebSocket('ws://localhost:8000/ws');
+
+                ws.onopen = () => {
+                    showResult('ws-status', '✓ WebSocket connected', false);
+                    console.log('WebSocket opened');
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log('WebSocket message:', data);
+
+                    const messagesDiv = document.getElementById('ws-messages');
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'log';
+                    msgDiv.textContent = `[${new Date().toLocaleTimeString()}] ${data.type}: ${JSON.stringify(data).slice(0, 100)}...`;
+                    messagesDiv.appendChild(msgDiv);
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                };
+
+                ws.onerror = (error) => {
+                    showResult('ws-status', '✗ WebSocket error', true);
+                    console.error('WebSocket error:', error);
+                };
+
+                ws.onclose = () => {
+                    showResult('ws-status', '○ WebSocket closed', false);
+                    console.log('WebSocket closed');
+                };
+            } catch (error) {
+                showResult('ws-status', `Error: ${error.message}`, true);
+                console.error('WebSocket setup error:', error);
+            }
+        }
+
+        function closeWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        async function testTraining() {
+            try {
+                console.log('Starting training test...');
+                showResult('training-result', '⏳ Starting training...', false);
+
+                const response = await fetch(`${API_BASE}/start_training`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        dataset: 'mnist',
+                        epochs: 2,
+                        batch_size: 64,
+                        learning_rate: 0.0002
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Training response:', data);
+
+                if (data.success) {
+                    showResult('training-result', '✓ Training started! Check WebSocket messages below for updates.', false);
+                } else {
+                    showResult('training-result', `Message: ${data.message}`, true);
+                }
+            } catch (error) {
+                showResult('training-result', `Error: ${error.message}`, true);
+                console.error('Training error:', error);
+            }
+        }
+
+        async function stopTraining() {
+            try {
+                const response = await fetch(`${API_BASE}/stop_training`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                console.log('Stop response:', data);
+                showResult('training-result', JSON.stringify(data, null, 2), false);
+            } catch (error) {
+                showResult('training-result', `Error: ${error.message}`, true);
+            }
+        }
+
+        // Test server on load
+        window.addEventListener('load', () => {
+            testStatus();
+        });
+    </script>
+</body>
+</html>
