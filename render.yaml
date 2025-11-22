@@ -1,0 +1,38 @@
+services:
+  # Backend API
+  - type: web
+    name: dcgan-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: ALLOWED_ORIGINS
+        value: "*"
+    plan: free
+
+  # Frontend Static Site
+  - type: web
+    name: dcgan-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: dcgan-api
+          type: web
+          property: host
+      - key: VITE_WS_URL
+        fromService:
+          name: dcgan-api
+          type: web
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    plan: free

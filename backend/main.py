@@ -9,6 +9,8 @@ from pydantic import BaseModel
 import torch
 import asyncio
 import json
+import os
+import time
 from trainer import DCGANTrainer
 from typing import Optional
 import logging
@@ -20,9 +22,12 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="DCGAN Demo API")
 
 # CORS middleware for React frontend
+# Allow localhost for development and any origin for production
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS if ALLOWED_ORIGINS[0] != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,6 +49,11 @@ trainer = DCGANTrainer(device=device)
 training_task = None
 active_connections = []
 
+# Training session tracking
+training_sessions = {}  # Store training history for comparison
+current_training_start_time = None
+current_training_dataset = None
+
 
 class TrainingConfig(BaseModel):
     dataset: str = "mnist"  # mnist or fashion_mnist
@@ -57,6 +67,18 @@ class GenerateRequest(BaseModel):
     num_images: int = 16
 
 
+class SaveModelRequest(BaseModel):
+    model_name: str = "default"  # mnist, fashion_mnist, or default
+
+
+class LoadModelRequest(BaseModel):
+    model_name: str = "default"  # mnist, fashion_mnist, or default
+
+
+class ListModelsResponse(BaseModel):
+    models: list = []
+
+
 @app.get("/")
 async def root():
     """API root"""
@@ -68,8 +90,10 @@ async def root():
             "/status": "GET - Get training status",
             "/generate": "POST - Generate synthetic images",
             "/metrics": "GET - Get training metrics",
-            "/save_model": "POST - Save model checkpoint",
-            "/load_model": "POST - Load model checkpoint",
+            "/save_model": "POST - Save model checkpoint (accepts model_name)",
+            "/load_model": "POST - Load model checkpoint (accepts model_name)",
+            "/list_models": "GET - List available saved models",
+            "/training_sessions": "GET - Get training session history for comparison",
             "/ws": "WebSocket - Real-time training updates"
         }
     }
@@ -117,6 +141,58 @@ async def generate_images(request: GenerateRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class GenerateFromModelRequest(BaseModel):
+    model_name: str = "default"  # mnist, fashion_mnist, or default
+    num_images: int = 16
+
+
+@app.post("/generate_from_model")
+async def generate_from_model(request: GenerateFromModelRequest):
+    """
+    Generate images from a specific saved model
+
+    Args:
+        request: GenerateFromModelRequest with model_name and num_images
+
+    Returns:
+        Base64 encoded image grid from the specified model
+    """
+    if trainer.is_training:
+        return {"success": False, "message": "Cannot generate while training"}
+
+    try:
+        # Determine checkpoint path
+        if request.model_name == "mnist":
+            checkpoint_path = "mnist_checkpoint.pth"
+        elif request.model_name == "fashion_mnist":
+            checkpoint_path = "fashion_checkpoint.pth"
+        else:
+            checkpoint_path = "dcgan_checkpoint.pth"
+
+        if not os.path.exists(checkpoint_path):
+            raise HTTPException(status_code=404, detail=f"Model {request.model_name} not found")
+
+        # Load the model temporarily
+        trainer.load_checkpoint(checkpoint_path)
+
+        # Generate images
+        num_images = min(request.num_images, 64)
+        fake_images = trainer.generate_images(num_images=num_images)
+        image_b64 = trainer.images_to_base64(fake_images, nrow=int(num_images**0.5))
+
+        return {
+            "success": True,
+            "image": image_b64,
+            "num_images": num_images,
+            "model_name": request.model_name
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating images from model: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/start_training")
 async def start_training(config: TrainingConfig):
     """
@@ -150,7 +226,7 @@ async def start_training(config: TrainingConfig):
 
         # Start training in background
         training_task = asyncio.create_task(
-            run_training(trainer, dataloader, config.epochs)
+            run_training(trainer, dataloader, config.epochs, config.dataset)
         )
 
         return {
@@ -184,9 +260,12 @@ async def stop_training():
 
 
 @app.post("/save_model")
-async def save_model():
+async def save_model(request: SaveModelRequest = None):
     """
     Save the current model checkpoint
+
+    Args:
+        request: SaveModelRequest with model_name (mnist, fashion_mnist, or default)
 
     Returns:
         Save confirmation with file path
@@ -195,14 +274,23 @@ async def save_model():
         return {"success": False, "message": "Cannot save model during training"}
 
     try:
-        checkpoint_path = "dcgan_checkpoint.pth"
+        # Determine checkpoint filename based on model_name
+        model_name = request.model_name if request else "default"
+        if model_name == "mnist":
+            checkpoint_path = "mnist_checkpoint.pth"
+        elif model_name == "fashion_mnist":
+            checkpoint_path = "fashion_checkpoint.pth"
+        else:
+            checkpoint_path = "dcgan_checkpoint.pth"
+
         trainer.save_checkpoint(checkpoint_path)
         logger.info(f"Model saved to {checkpoint_path}")
 
         return {
             "success": True,
-            "message": "Model saved successfully",
-            "path": checkpoint_path
+            "message": f"Model saved successfully as {model_name}",
+            "path": checkpoint_path,
+            "model_name": model_name
         }
     except Exception as e:
         logger.error(f"Error saving model: {e}")
@@ -210,34 +298,89 @@ async def save_model():
 
 
 @app.post("/load_model")
-async def load_model():
+async def load_model(request: LoadModelRequest = None):
     """
     Load a model checkpoint
 
+    Args:
+        request: LoadModelRequest with model_name (mnist, fashion_mnist, or default)
+
     Returns:
-        Load confirmation with file path
+        Load confirmation with file path and metrics
     """
     if trainer.is_training:
         return {"success": False, "message": "Cannot load model during training"}
 
     try:
-        checkpoint_path = "dcgan_checkpoint.pth"
+        # Determine checkpoint filename based on model_name
+        model_name = request.model_name if request else "default"
+        if model_name == "mnist":
+            checkpoint_path = "mnist_checkpoint.pth"
+        elif model_name == "fashion_mnist":
+            checkpoint_path = "fashion_checkpoint.pth"
+        else:
+            checkpoint_path = "dcgan_checkpoint.pth"
+
+        if not os.path.exists(checkpoint_path):
+            raise FileNotFoundError(f"Checkpoint {checkpoint_path} not found")
+
         trainer.load_checkpoint(checkpoint_path)
         logger.info(f"Model loaded from {checkpoint_path}")
 
         return {
             "success": True,
-            "message": "Model loaded successfully",
-            "path": checkpoint_path
+            "message": f"Model loaded successfully ({model_name})",
+            "path": checkpoint_path,
+            "model_name": model_name,
+            "metrics": trainer.get_metrics()
         }
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="No saved model found")
+        raise HTTPException(status_code=404, detail=f"No saved model found for {model_name}")
     except Exception as e:
         logger.error(f"Error loading model: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def run_training(trainer: DCGANTrainer, dataloader, num_epochs):
+@app.get("/list_models")
+async def list_models():
+    """
+    List available saved model checkpoints
+
+    Returns:
+        List of available models with their info
+    """
+    models = []
+    model_files = {
+        "mnist": "mnist_checkpoint.pth",
+        "fashion_mnist": "fashion_checkpoint.pth",
+        "default": "dcgan_checkpoint.pth"
+    }
+
+    for name, path in model_files.items():
+        if os.path.exists(path):
+            stat = os.stat(path)
+            models.append({
+                "name": name,
+                "path": path,
+                "size_mb": round(stat.st_size / (1024 * 1024), 2),
+                "modified": time.ctime(stat.st_mtime)
+            })
+
+    return {"models": models}
+
+
+@app.get("/training_sessions")
+async def get_training_sessions():
+    """
+    Get training session history for comparison
+
+    Returns:
+        Dictionary of training sessions with metrics
+    """
+    return {"sessions": training_sessions}
+
+
+async def run_training(trainer: DCGANTrainer, dataloader, num_epochs, dataset_name: str = "unknown"):
     """
     Run training loop asynchronously
 
@@ -245,9 +388,14 @@ async def run_training(trainer: DCGANTrainer, dataloader, num_epochs):
         trainer: DCGANTrainer instance
         dataloader: PyTorch DataLoader
         num_epochs: Number of epochs to train
+        dataset_name: Name of the dataset being trained on
     """
+    global current_training_start_time, current_training_dataset, training_sessions
+
     trainer.is_training = True
-    logger.info(f"Starting training for {num_epochs} epochs on {trainer.device}")
+    current_training_start_time = time.time()
+    current_training_dataset = dataset_name
+    logger.info(f"Starting training for {num_epochs} epochs on {trainer.device} with {dataset_name}")
 
     try:
         for epoch in range(num_epochs):
@@ -349,9 +497,31 @@ async def run_training(trainer: DCGANTrainer, dataloader, num_epochs):
         })
     finally:
         trainer.is_training = False
+
+        # Calculate training duration and save session
+        training_duration = time.time() - current_training_start_time if current_training_start_time else 0
+        session_data = {
+            "dataset": current_training_dataset,
+            "epochs": trainer.current_epoch + 1,
+            "training_time_seconds": round(training_duration, 2),
+            "training_time_formatted": f"{int(training_duration // 60)}m {int(training_duration % 60)}s",
+            "device": str(trainer.device),
+            "final_g_loss": trainer.metrics['g_losses'][-1] if trainer.metrics['g_losses'] else None,
+            "final_d_loss": trainer.metrics['d_losses'][-1] if trainer.metrics['d_losses'] else None,
+            "final_real_score": trainer.metrics['real_scores'][-1] if trainer.metrics['real_scores'] else None,
+            "final_fake_score": trainer.metrics['fake_scores'][-1] if trainer.metrics['fake_scores'] else None,
+            "metrics": trainer.get_metrics(),
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        # Store session by dataset name
+        training_sessions[current_training_dataset] = session_data
+        logger.info(f"Training session saved for {current_training_dataset}: {training_duration:.1f}s")
+
         await broadcast_update({
             'type': 'training_complete',
-            'message': 'Training completed or stopped'
+            'message': 'Training completed or stopped',
+            'session': session_data
         })
 
 

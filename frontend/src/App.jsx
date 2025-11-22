@@ -3,8 +3,25 @@ import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './App.css';
 
-const API_BASE = 'http://localhost:8000';
-const WS_URL = 'ws://localhost:8000/ws';
+// Use environment variables for production, fallback to localhost for development
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return 'http://localhost:8000';
+  // Handle Render's host format (without protocol)
+  if (envUrl.startsWith('http')) return envUrl;
+  return `https://${envUrl}`;
+};
+
+const getWsUrl = () => {
+  const envUrl = import.meta.env.VITE_WS_URL;
+  if (!envUrl) return 'ws://localhost:8000/ws';
+  // Handle Render's host format (without protocol)
+  if (envUrl.startsWith('ws')) return envUrl;
+  return `wss://${envUrl}/ws`;
+};
+
+const API_BASE = getApiUrl();
+const WS_URL = getWsUrl();
 
 function App() {
   const [status, setStatus] = useState({ is_training: false, current_epoch: 0, device: 'mps' });
@@ -30,12 +47,23 @@ function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Comparison dashboard state
+  const [availableModels, setAvailableModels] = useState([]);
+  const [trainingSessions, setTrainingSessions] = useState({});
+  const [mnistImage, setMnistImage] = useState(null);
+  const [fashionImage, setFashionImage] = useState(null);
+  const [isLoadingComparison, setIsLoadingComparison] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+
   const wsRef = useRef(null);
   const logsEndRef = useRef(null);
 
   // WebSocket connection
   useEffect(() => {
     connectWebSocket();
+    // Fetch available models on mount
+    fetchAvailableModels();
+    fetchTrainingSessions();
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
@@ -240,13 +268,19 @@ function App() {
 
   const saveModel = async () => {
     setIsSaving(true);
-    addLog('Saving model...', 'info');
+    // Save with current dataset name
+    const modelName = config.dataset;
+    addLog(`Saving model as ${modelName}...`, 'info');
 
     try {
-      const response = await axios.post(`${API_BASE}/save_model`);
+      const response = await axios.post(`${API_BASE}/save_model`, {
+        model_name: modelName
+      });
 
       if (response.data.success) {
         addLog(`✓ Model saved: ${response.data.path}`, 'success');
+        // Refresh available models list
+        fetchAvailableModels();
       }
     } catch (error) {
       addLog(`✗ Error saving model: ${error.message}`, 'error');
@@ -255,23 +289,111 @@ function App() {
     }
   };
 
-  const loadModel = async () => {
+  const loadModel = async (modelName = null) => {
     setIsLoading(true);
-    addLog('Loading model...', 'info');
+    addLog(`Loading model${modelName ? ` (${modelName})` : ''}...`, 'info');
 
     try {
-      const response = await axios.post(`${API_BASE}/load_model`);
+      const response = await axios.post(`${API_BASE}/load_model`, {
+        model_name: modelName || 'default'
+      });
 
       if (response.data.success) {
-        addLog(`✓ Model loaded from: ${response.data.path}`, 'success');
+        addLog(`✓ Model loaded: ${response.data.path}`, 'success');
         // Refresh metrics and status
-        const metricsResponse = await axios.get(`${API_BASE}/metrics`);
-        setMetrics(metricsResponse.data);
+        if (response.data.metrics) {
+          setMetrics(response.data.metrics);
+        }
       }
     } catch (error) {
       addLog(`✗ Error loading model: ${error.message}`, 'error');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const saveModelAs = async (modelName) => {
+    setIsSaving(true);
+    addLog(`Saving model as ${modelName}...`, 'info');
+
+    try {
+      const response = await axios.post(`${API_BASE}/save_model`, {
+        model_name: modelName
+      });
+
+      if (response.data.success) {
+        addLog(`✓ Model saved as ${modelName}: ${response.data.path}`, 'success');
+        // Refresh available models
+        fetchAvailableModels();
+      }
+    } catch (error) {
+      addLog(`✗ Error saving model: ${error.message}`, 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const fetchAvailableModels = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/list_models`);
+      setAvailableModels(response.data.models);
+    } catch (error) {
+      console.error('Error fetching models:', error);
+    }
+  };
+
+  const fetchTrainingSessions = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/training_sessions`);
+      setTrainingSessions(response.data.sessions);
+    } catch (error) {
+      console.error('Error fetching training sessions:', error);
+    }
+  };
+
+  const generateFromModel = async (modelName, setImage) => {
+    try {
+      const response = await axios.post(`${API_BASE}/generate_from_model`, {
+        model_name: modelName,
+        num_images: 16
+      });
+
+      if (response.data.success) {
+        setImage(response.data.image);
+        return true;
+      }
+    } catch (error) {
+      console.error(`Error generating from ${modelName}:`, error);
+      return false;
+    }
+  };
+
+  const loadComparisonData = async () => {
+    setIsLoadingComparison(true);
+    addLog('Loading comparison data...', 'info');
+
+    try {
+      // Fetch available models and training sessions
+      await fetchAvailableModels();
+      await fetchTrainingSessions();
+
+      // Generate images from both models if available
+      const models = await axios.get(`${API_BASE}/list_models`);
+      const modelNames = models.data.models.map(m => m.name);
+
+      if (modelNames.includes('mnist')) {
+        await generateFromModel('mnist', setMnistImage);
+      }
+      if (modelNames.includes('fashion_mnist')) {
+        await generateFromModel('fashion_mnist', setFashionImage);
+      }
+
+      setShowComparison(true);
+      addLog('✓ Comparison data loaded', 'success');
+    } catch (error) {
+      addLog(`✗ Error loading comparison: ${error.message}`, 'error');
+    } finally {
+      setIsLoadingComparison(false);
     }
   };
 
@@ -596,6 +718,263 @@ function App() {
               <li><strong>Optimizer:</strong> Adam (lr=0.0002, β₁=0.5)</li>
               <li><strong>Loss:</strong> Binary Cross-Entropy</li>
             </ol>
+          </div>
+        </div>
+
+        {/* Comparison Dashboard */}
+        <div className="panel comparison-panel" style={{ gridColumn: '1 / -1' }}>
+          <h2>MNIST vs Fashion-MNIST Comparison</h2>
+
+          <div className="button-group" style={{ marginBottom: '20px' }}>
+            <button
+              className="btn btn-primary"
+              onClick={loadComparisonData}
+              disabled={isLoadingComparison || status.is_training}
+            >
+              {isLoadingComparison ? '⏳ Loading...' : '📊 Load Comparison Data'}
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => generateFromModel('mnist', setMnistImage)}
+              disabled={status.is_training}
+            >
+              🔢 Generate MNIST
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => generateFromModel('fashion_mnist', setFashionImage)}
+              disabled={status.is_training}
+            >
+              👕 Generate Fashion
+            </button>
+          </div>
+
+          {/* Side-by-side Image Comparison */}
+          <div className="comparison-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div className="comparison-card" style={{ background: '#f8f9ff', padding: '15px', borderRadius: '10px', border: '2px solid #667eea' }}>
+              <h3 style={{ color: '#667eea', marginBottom: '10px' }}>MNIST (Digits)</h3>
+              {mnistImage ? (
+                <img
+                  src={`data:image/png;base64,${mnistImage}`}
+                  alt="MNIST generated"
+                  style={{ width: '100%', borderRadius: '8px' }}
+                />
+              ) : (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#666', background: '#eee', borderRadius: '8px' }}>
+                  <p>No MNIST model loaded</p>
+                  <small>Train and save an MNIST model first</small>
+                </div>
+              )}
+            </div>
+
+            <div className="comparison-card" style={{ background: '#fff5f5', padding: '15px', borderRadius: '10px', border: '2px solid #e74c3c' }}>
+              <h3 style={{ color: '#e74c3c', marginBottom: '10px' }}>Fashion-MNIST (Clothing)</h3>
+              {fashionImage ? (
+                <img
+                  src={`data:image/png;base64,${fashionImage}`}
+                  alt="Fashion-MNIST generated"
+                  style={{ width: '100%', borderRadius: '8px' }}
+                />
+              ) : (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#666', background: '#eee', borderRadius: '8px' }}>
+                  <p>No Fashion-MNIST model loaded</p>
+                  <small>Train and save a Fashion-MNIST model first</small>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Training Sessions Metrics Comparison */}
+          {(trainingSessions.mnist || trainingSessions.fashion_mnist) && (
+            <div className="metrics-comparison" style={{ marginTop: '20px' }}>
+              <h3 style={{ marginBottom: '15px' }}>Training Metrics Comparison</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px' }}>
+                <thead>
+                  <tr style={{ background: '#667eea', color: 'white' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Metric</th>
+                    <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>MNIST</th>
+                    <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Fashion-MNIST</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ background: '#f8f9ff' }}>
+                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>Training Time</td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.mnist?.training_time_formatted || '-'}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.fashion_mnist?.training_time_formatted || '-'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>Epochs</td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.mnist?.epochs || '-'}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.fashion_mnist?.epochs || '-'}
+                    </td>
+                  </tr>
+                  <tr style={{ background: '#f8f9ff' }}>
+                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>Final Generator Loss</td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.mnist?.final_g_loss?.toFixed(4) || '-'}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.fashion_mnist?.final_g_loss?.toFixed(4) || '-'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>Final Discriminator Loss</td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.mnist?.final_d_loss?.toFixed(4) || '-'}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.fashion_mnist?.final_d_loss?.toFixed(4) || '-'}
+                    </td>
+                  </tr>
+                  <tr style={{ background: '#f8f9ff' }}>
+                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>D(real) Score</td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.mnist?.final_real_score?.toFixed(4) || '-'}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.fashion_mnist?.final_real_score?.toFixed(4) || '-'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>D(fake) Score</td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.mnist?.final_fake_score?.toFixed(4) || '-'}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.fashion_mnist?.final_fake_score?.toFixed(4) || '-'}
+                    </td>
+                  </tr>
+                  <tr style={{ background: '#f8f9ff' }}>
+                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>Device</td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.mnist?.device || '-'}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      {trainingSessions.fashion_mnist?.device || '-'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Comparison Loss Curves */}
+              {(trainingSessions.mnist?.metrics?.g_losses?.length > 0 || trainingSessions.fashion_mnist?.metrics?.g_losses?.length > 0) && (
+                <div style={{ marginTop: '20px' }}>
+                  <h3 style={{ marginBottom: '15px' }}>Loss Curves Comparison</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {/* MNIST Loss Curve */}
+                    <div style={{ background: '#f8f9ff', padding: '15px', borderRadius: '10px' }}>
+                      <h4 style={{ color: '#667eea', marginBottom: '10px' }}>MNIST Generator Loss</h4>
+                      {trainingSessions.mnist?.metrics?.g_losses?.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={200}>
+                          <LineChart data={trainingSessions.mnist.metrics.g_losses.map((loss, idx) => ({ epoch: idx, loss }))}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="epoch" />
+                            <YAxis />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="loss" stroke="#667eea" strokeWidth={2} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <p style={{ color: '#666', textAlign: 'center' }}>No data</p>
+                      )}
+                    </div>
+
+                    {/* Fashion-MNIST Loss Curve */}
+                    <div style={{ background: '#fff5f5', padding: '15px', borderRadius: '10px' }}>
+                      <h4 style={{ color: '#e74c3c', marginBottom: '10px' }}>Fashion-MNIST Generator Loss</h4>
+                      {trainingSessions.fashion_mnist?.metrics?.g_losses?.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={200}>
+                          <LineChart data={trainingSessions.fashion_mnist.metrics.g_losses.map((loss, idx) => ({ epoch: idx, loss }))}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="epoch" />
+                            <YAxis />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="loss" stroke="#e74c3c" strokeWidth={2} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <p style={{ color: '#666', textAlign: 'center' }}>No data</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Available Models */}
+          {availableModels.length > 0 && (
+            <div className="available-models" style={{ marginTop: '20px' }}>
+              <h3 style={{ marginBottom: '10px' }}>Saved Models</h3>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {availableModels.map((model) => (
+                  <div
+                    key={model.name}
+                    style={{
+                      padding: '10px 15px',
+                      background: model.name === 'mnist' ? '#e8f5e9' : model.name === 'fashion_mnist' ? '#fff3e0' : '#f5f5f5',
+                      borderRadius: '8px',
+                      border: '1px solid #ddd'
+                    }}
+                  >
+                    <strong>{model.name}</strong>
+                    <div style={{ fontSize: '0.85em', color: '#666' }}>
+                      {model.size_mb} MB | {model.modified}
+                    </div>
+                    <button
+                      className="btn btn-sm"
+                      style={{ marginTop: '5px', padding: '4px 8px', fontSize: '0.85em' }}
+                      onClick={() => loadModel(model.name)}
+                      disabled={isLoading || status.is_training}
+                    >
+                      Load
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Model Switching */}
+          <div className="model-switching" style={{ marginTop: '20px', padding: '15px', background: '#f0f4ff', borderRadius: '10px' }}>
+            <h3 style={{ marginBottom: '10px' }}>Quick Model Actions</h3>
+            <div className="button-group">
+              <button
+                className="btn btn-secondary"
+                onClick={() => loadModel('mnist')}
+                disabled={isLoading || status.is_training}
+              >
+                📂 Load MNIST Model
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => loadModel('fashion_mnist')}
+                disabled={isLoading || status.is_training}
+              >
+                📂 Load Fashion Model
+              </button>
+              <button
+                className="btn btn-success"
+                onClick={() => saveModelAs('mnist')}
+                disabled={isSaving || status.is_training}
+              >
+                💾 Save as MNIST
+              </button>
+              <button
+                className="btn btn-success"
+                onClick={() => saveModelAs('fashion_mnist')}
+                disabled={isSaving || status.is_training}
+              >
+                💾 Save as Fashion
+              </button>
+            </div>
           </div>
         </div>
       </div>
