@@ -1,5 +1,4 @@
 services:
-  # Backend API
   - type: web
     name: dcgan-api
     runtime: python
@@ -11,15 +10,3 @@ services:
         value: "3.11"
       - key: ALLOWED_ORIGINS
         value: "*"
-
-staticSites:
-  # Frontend Static Site
-  - name: dcgan-frontend
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://dcgan-api.onrender.com
-      - key: VITE_WS_URL
-        value: wss://dcgan-api.onrender.com/ws
