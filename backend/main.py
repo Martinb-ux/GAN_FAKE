@@ -35,15 +35,29 @@ app.add_middleware(
 
 # Global trainer instance
 # Support Apple Silicon (MPS), CUDA, and CPU
-if torch.backends.mps.is_available():
-    device = torch.device("mps")
-    logger.info("Using Apple Silicon GPU (MPS)")
-elif torch.cuda.is_available():
-    device = torch.device("cuda")
-    logger.info("Using NVIDIA GPU (CUDA)")
-else:
-    device = torch.device("cpu")
+def get_device():
+    """Detect available device with proper error handling"""
+    # Check for CUDA first
+    if torch.cuda.is_available():
+        logger.info("Using NVIDIA GPU (CUDA)")
+        return torch.device("cuda")
+
+    # Check for MPS (Apple Silicon) - verify it actually works
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        try:
+            # Test if MPS actually works by creating a small tensor
+            test_tensor = torch.zeros(1, device="mps")
+            del test_tensor
+            logger.info("Using Apple Silicon GPU (MPS)")
+            return torch.device("mps")
+        except Exception as e:
+            logger.warning(f"MPS available but not working: {e}")
+
+    # Fallback to CPU
     logger.info("Using CPU")
+    return torch.device("cpu")
+
+device = get_device()
 
 trainer = DCGANTrainer(device=device)
 training_task = None
@@ -210,8 +224,21 @@ async def start_training(config: TrainingConfig):
         return {"success": False, "message": "Training already in progress"}
 
     try:
-        # Switch device if needed
-        requested_device = torch.device(config.device)
+        # Validate and switch device if needed
+        requested_device_str = config.device
+
+        # Check if requested device is available
+        if requested_device_str == "mps":
+            if not (hasattr(torch.backends, 'mps') and torch.backends.mps.is_available()):
+                logger.warning("MPS requested but not available, falling back to CPU")
+                requested_device_str = "cpu"
+        elif requested_device_str == "cuda":
+            if not torch.cuda.is_available():
+                logger.warning("CUDA requested but not available, falling back to CPU")
+                requested_device_str = "cpu"
+
+        requested_device = torch.device(requested_device_str)
+
         if str(requested_device) != str(trainer.device):
             logger.info(f"Switching device from {trainer.device} to {requested_device}")
             device = requested_device
